@@ -1,0 +1,53 @@
+# Decisions
+
+One line per decision with the reason. IDs are stable; add new ones at the end of their section. Where a decision deviates from `docs/BRIEF.md`, it says **(deviates from brief)**.
+
+## Toolchain and versions (verified 2026-11-16)
+
+- **D-001 npm** as package manager. Reason: Expo default, lockfile caches cleanly in CI, no hoisting config needed for React Native.
+- **D-002 Expo SDK 58 / React Native 0.88.1 / React 19.3.0.** Reason: newest stable Expo SDK (`npm view expo dist-tags`: `latest` = 58.0.x) and the Kotlin compile gate passes on it with the chosen WebRTC package (see Evidence E-3). Fallbacks if a device test regresses: SDK 57 = RN 0.86.3, SDK 56 = RN 0.85.3, SDK 55 = RN 0.83.10.
+- **D-003 TypeScript pinned to `~6.0.3`.** Reason: Expo SDK 58's template pins it; `typescript@latest` is 7.0.2 (native compiler) but `typescript-eslint` supports `<6.1.0` and `ts-jest` `<7`. Revisit when the tooling supports TS 7.
+- **D-004 WebRTC package: `@livekit/react-native-webrtc` 150.1.1, exact pin.** Reason: the brief prefers it; stage 2's `@livekit/react-native@3.1.0` peers on `^150.1.0`, so one WebRTC build serves both stages; it compiles on RN 0.88.1; actively released (150.1.1 on 2026-10-26). See Evidence E-1..E-3.
+- **D-005 MMKV kept, with `react-native-nitro-modules` pinned to exactly `0.35.9`.** Reason: user's default; `react-native-mmkv@4.3.2` was generated against Nitro 0.35.9 while `latest` is 0.37.2 (Nitro is pre-1.0, minor versions can break generated code) and the compile gate passes with 0.35.9. MMKV 4 ships a web fallback, so the web target needs no stand-in.
+- **D-006 `@playwright/test` pinned to exactly `1.63.0`.** Reason: matches the Chromium preinstalled in the cloud image (`/opt/pw-browsers/chromium-1243`); the Playwright download hosts (`cdn.playwright.dev`, `playwright.download.prss.microsoft.com`) are blocked by the session allowlist.
+- **D-007 ESLint 9.x with `eslint-config-expo` flat config.** Reason: matches `eslint-config-expo@58`; ESLint 10 resolves in a dry run but has not been proven with the Expo plugin set. Revisit (npm marks 9.39.5 as no longer supported).
+- **D-008 `@livekit/react-native-expo-plugin` not used in stage 1.** Reason: it exists for the LiveKit RN SDK (stage 2); the WebRTC fork autolinks without it.
+- **D-009 `expo-dev-client` not included in the test APK.** Reason: its launcher screen would block an offline start in a pocket. The debug variant embeds the JS bundle so the CI APK runs without Metro (`react { debuggableVariants = [] }` through a config plugin). Local development uses `expo run:android` + Metro.
+- **D-010 compileSdk/targetSdk 36, minSdk 29, build-tools 36.0.0 (provisional).** Reason: what RN 0.88's Gradle plugin and the AGP 9 build verified; Android 37.x platforms exist on the stable SDK channel, raising targetSdk is a separate step because it changes runtime behaviour and needs the Android 17 behaviour-change review (`android-native`, M1).
+
+## Architecture
+
+- **D-011 Native modules are local Expo modules in `modules/`, not TurboModules inside `android/`. (deviates from brief)** Reason: the brief allows "local Expo modules if they fit better"; `expo prebuild --clean` regenerates `android/` and would delete app-local Kotlin, local modules autolink and merge their own manifest (service, permissions). `android/` is still generated and committed. `specs/` holds the TypeScript description of each module's JS surface.
+- **D-012 Identity in `config/identity.json` (JSON, not TS).** Reason: `app.config.ts` is loaded by Node via Expo's config loader, which cannot resolve an extensionless `.ts` import; JSON loads in Node, Metro, Jest and Gradle alike. Holds display name, application id, URL scheme, pairing prefix, NSD service type, Wi-Fi Direct name prefix, notification channel id.
+- **D-013 Placeholder application ID `app.pillion.intercom`.** Reason: any reverse-DNS placeholder; rename in `config/identity.json` (uninstall + re-pair test phones afterwards).
+- **D-014 Ownership gaps in the brief's table filled.** `src/platform/link` + `src/platform/service` native wrappers -> `android-native`; `src/platform/media` + `audio` -> `media`; `src/platform/permissions` + `storage` -> `ui`; every `*.web.ts` -> `web-verify`. Reason: the table lists no owner for them and one-owner-per-directory is what makes parallel work safe.
+- **D-015 Two extra platform ports: `permissions/` and `storage/`.** Reason: onboarding needs a permission port and the pairing store needs Keystore-backed storage; both must have web fakes like every other interface.
+- **D-016 Platform interface files stay in `src/platform` (as in the brief) and `src/core` may import exactly those, type-only.** Reason: follows the brief's layout; the allowlist is enforced by ESLint zones so nothing else leaks into core.
+- **D-017 `MediaEngine` (whole ride) + `MediaSession` (one per negotiation attempt).** Reason: a reconnect must not re-acquire the microphone; the loopback self-test is just two sessions with `sendLocalAudio: false` on the receiver.
+- **D-018 Link is a byte pipe; framing, auth and JSON live in TypeScript (`src/core/protocol`).** Reason: unit-testable on Node, identical on Android, web relay and the in-memory fakes; native code stays thin.
+- **D-019 Handshake: mutual HMAC proofs of the 32-byte secret, HKDF direction keys, implicit message counters, MAC on every frame including SDP.** Reason: proves possession before any session message is accepted; replay, reorder, drop and tamper all fail the MAC; MAC'd SDP binds the DTLS fingerprint to the pairing. Details in `src/core/protocol/messages.ts`.
+- **D-020 Audio cues play through the native `AudioRoute` (`USAGE_VOICE_COMMUNICATION`), not a media-player library.** Reason: cues must come out of the communication device the call uses; a music-stream player may route to the speaker while in communication mode.
+- **D-021 Jest runs in a plain Node environment (babel-preset-expo transform, `@noble` transpiled); no component tests.** Reason: a stray react-native import in `src/core` must fail its tests; UI is verified through the web build + Playwright screenshots, which is what the brief asks for.
+- **D-022 Developer features are gated by a runtime developer-mode switch (7 taps on the version label), not by `__DEV__`.** Reason: the test APK must carry the "paste pairing string" path, the earpiece/speaker override and the tunables screen, but those must stay hidden from ordinary use.
+- **D-023 Product-name-bearing labels inside crypto KDF strings (`pillion/v1/...`) are protocol identifiers, not display names.** Reason: they must stay stable across a rename; changing them is a protocol break (bump `PROTOCOL_VERSION`).
+
+## Cloud environment
+
+- **D-024 Gradle in cloud sessions uses Google's Maven Central mirror (`maven-central.storage-download.googleapis.com`) through `~/.gradle/init.d/00-central-mirror.gradle`.** Reason: Maven Central now sits behind Cloudflare and answers about 25% of parallel requests with HTTP 429 (no `Retry-After`) from the shared egress IP; Gradle gives up after three quick retries. The mirror returned 200 for 40/40 parallel requests. The init script lives in the user's Gradle home and is written by `scripts/cloud-setup.sh`; the repo's Gradle files and CI use real Central.
+- **D-025 `scripts/fetch-doc.sh` for subagents.** Reason: background subagents may not get WebFetch; the script prints a page as text through the session proxy.
+
+## Evidence
+
+- **E-1 Candidates (npm metadata, 2026-11-16).** `@livekit/react-native-webrtc` 150.1.1 (6 releases since 2026-06, native lib `io.github.webrtc-sdk:android-prefixed:150.7871.04`, package prefix `livekit.org.webrtc`); `react-native-webrtc` 155.0.1 (upstream; Android lib `org.jitsi:webrtc:155.+`, a different build, not what LiveKit uses); `@stream-io/react-native-webrtc` 145.4.2 (Android lib `io.getstream:stream-video-webrtc-android:145.17.0`, Kotlin parts). All three declare only `react-native >=0.60` (or `>=0.73`) as peer: that range proves nothing, so compatibility was established by source inspection and a real build (E-3).
+- **E-2 New Architecture status.** None of the three has a `codegenConfig` or TurboModule spec: each is a legacy-style Java `ReactContextBaseJavaModule` (`com.oney.WebRTCModule`) running through React Native's interop layer, as the brief warned. All three expose `WebRTCModuleOptions` with a `fieldTrials` string (passed to `PeerConnectionFactory.InitializationOptions.setFieldTrials`) and an injectable `audioDeviceModule`: the hooks for risk 1 (`WebRTC-IncludeWifiDirect` field trial) and for hardware AEC/NS control. **Runtime behaviour of the interop layer on a device is untested**; only the build is proven.
+- **E-3 Build gate.** Expo SDK 58.0.25 (RN 0.88.1, Kotlin 2.2.10, AGP 9, Gradle 9.4.1, JDK 21, NDK 27.1.12297006, compileSdk 36, minSdk 29): `./gradlew :app:compileDebugKotlin` -> `BUILD SUCCESSFUL in 1m 57s`, with `:livekit_react-native-webrtc:compileDebugJavaWithJavac`, `:react-native-mmkv:compileDebugKotlin` and `:react-native-nitro-modules:compileDebugKotlin` executed, zero compiler warnings. Full `assembleDebug` result: see `docs/PLAN.md` M0 notes.
+- **E-4 Stage-2 compatibility.** `npm view @livekit/react-native@3.1.0 peerDependencies` -> `@livekit/react-native-webrtc: ^150.1.0`, `livekit-client: ^2.20.0`.
+
+## Findings: things in the brief that were wrong, outdated or needed adjusting
+
+- Maven Central rate-limits the cloud egress (HTTP 429), so "Google's SDK and Maven downloads may be blocked" was not the actual problem; SDK, Google Maven, Gradle and npm hosts were all reachable (D-024).
+- The newest Expo SDK is 58 (RN 0.88), far past what the brief assumed; TypeScript 7 exists but the tooling does not support it yet (D-003).
+- `react-native-mmkv` v4 is a Nitro module and needs a pinned `react-native-nitro-modules` (D-005).
+- A "debug APK" does not run offline by default (JS comes from Metro) and `expo-dev-client` adds a launcher: the CI APK must embed the bundle (D-009).
+- The brief's directory table has no owner for several `src/platform` folders (D-014) and its file tree puts Kotlin in `android/`, which `expo prebuild --clean` would delete (D-011).
+- `NetworkMonitorAutoDetect.setIncludeWifiDirect` / `IncludeWifiDirect` (risk 1): status is recorded in `docs/evidence/media-*.md` once the `media` subagent has inspected the AAR.
