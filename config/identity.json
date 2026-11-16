@@ -1,0 +1,10 @@
+{
+  "displayName": "Pillion",
+  "slug": "pillion",
+  "androidApplicationId": "app.pillion.intercom",
+  "urlScheme": "pillion",
+  "pairingPrefix": "pillion",
+  "nsdServiceType": "_pillion._tcp",
+  "wifiDirectNamePrefix": "DIRECT-pn-",
+  "notificationChannelId": "ride"
+}
