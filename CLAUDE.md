@@ -19,7 +19,7 @@ npm run android:assemble                           # debug APK, arm64 only
 ## Architecture rules (lint-enforced where marked *)
 
 - `src/core` is pure TypeScript: no react / react-native / expo imports\*, and it may import only the platform _interface_ files\* (allowlist in `eslint.config.js`). Every change to `src/core` comes with tests.
-- `src/platform/<area>`: interface + native `.ts` + web `.web.ts` implementations, one factory `index.ts` / `index.web.ts` per area. Web-only code is never imported from native code\* and must not reach the Android bundle.
+- `src/platform/<area>`: the interface file, one factory module per implementation `create<X>.ts` (native) with a `create<X>.web.ts` twin exporting the same name, and a shared `index.ts` that re-exports the factories (Metro picks the twin on web). Web-only code is never imported from native code\* and must not reach the Android bundle.
 - The session state machine (`src/core/session`) drives everything and talks to `LinkTransport` and `MediaEngine` only through interfaces; in-memory fakes live in `src/core/session/testing`.
 - Native Kotlin is thin (byte pipe, audio routing, foreground service) and lives in local Expo modules under `modules/`, never hand-edited inside `android/`. Anything that is not a direct platform call is plain Kotlin with JVM tests.
 - Product name and Android application ID live only in `config/identity.json`.

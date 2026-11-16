@@ -18,7 +18,7 @@ Read `CLAUDE.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, and the frozen co
 
 - Theme: dark, high contrast (WCAG AA or better), minimum 56 dp touch targets (ride controls 96 dp+), large type, no gestures that need precision, no reliance on colour alone, accessibility labels on every control, safe-area aware (edge-to-edge is on).
 - Screens (placeholders in M0, functional in M1): onboarding, pair (host shows QR / guest scans; dev-only "paste pairing string"), home, ride (status, start, mute, end; connection state; headset state), settings, diagnostics, hidden debug screen (audio tunables editor, developer overrides; reachable by 7 taps on the version label, not only in `__DEV__`).
-- Single composition root `src/app/composition.ts` wires adapters from `src/platform/*` index factories (Metro picks `.web.ts` on web) into `createSessionController`. No platform code outside that file and the `src/platform` adapters.
+- Single composition root `src/app/composition.ts` (M1) wires adapters from the shared `src/platform/<area>/index.ts` factories (`create<X>.ts`; Metro picks the `create<X>.web.ts` twin on web) into `createSessionController`. No platform code outside that file and the `src/platform` adapters.
 - State: Zustand store(s) in `src/app/`; persistence through the `KeyValueStore` / `SecureStore` ports. One partner for now, but the data model is a list of `PairingRecord`s.
 - Strings in one place (`src/app/strings.ts`) to ease later localisation. Product name only from `config/identity.json`.
 - Native-only imports must not break the web build: never import native-only modules from files the web bundle includes unless they are guarded by platform extension.

@@ -12,7 +12,7 @@ Read `CLAUDE.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, and the frozen co
 
 ## You own
 
-`src/platform/media/**` and `src/platform/audio/**` except the frozen interface files (`MediaEngine.ts`, `AudioRoute.ts`, `AudioTunables.ts`). Web implementations (`*.web.ts`) belong to `web-verify`; the Kotlin behind `AudioRoute` belongs to `android-native`; you write the TypeScript wrapper that binds to the native module's `specs/` surface. You may create evidence notes as `docs/evidence/media-*.md`.
+`src/platform/media/**` and `src/platform/audio/**` except the frozen interface files (`MediaEngine.ts`, `AudioRoute.ts`, `AudioTunables.ts`): factory modules `createMediaEngine.ts` / `createAudioRoute.ts` and the shared `index.ts` of both areas. Web twins (`create<X>.web.ts`) belong to `web-verify`; the Kotlin behind `AudioRoute` belongs to `android-native`; you write the TypeScript wrapper that binds to the native module's `specs/` surface. You may create evidence notes as `docs/evidence/media-*.md`.
 
 ## Facts already established (verify before relying)
 

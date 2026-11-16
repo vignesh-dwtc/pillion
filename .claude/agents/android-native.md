@@ -12,7 +12,7 @@ Read `CLAUDE.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, and the frozen co
 
 ## You own
 
-`modules/**` (local Expo modules; Kotlin lives in `modules/<name>/android/`), `specs/**` (TypeScript descriptions of each native module's JS surface: these are the contract between your Kotlin and the JS wrappers), `plugins/**` (Expo config plugins), `android/**` (the generated, committed project: change it through config plugins / `app.config.ts`, not by hand, so `expo prebuild` stays reproducible), and the native TypeScript wrappers `src/platform/link/*.ts` (e.g. `LanTransport.ts`, `WifiDirectTransport.ts`, `index.ts`) and `src/platform/service/*.ts` (native `RideService` wrapper, `index.ts`), except the frozen interface files. Web stand-ins (`*.web.ts`) belong to `web-verify`.
+`modules/**` (local Expo modules; Kotlin lives in `modules/<name>/android/`), `specs/**` (TypeScript descriptions of each native module's JS surface: these are the contract between your Kotlin and the JS wrappers), `plugins/**` (Expo config plugins), `android/**` (the generated, committed project: change it through config plugins / `app.config.ts`, not by hand, so `expo prebuild` stays reproducible), and the native TypeScript wrappers `src/platform/link/*.ts` (e.g. `LanTransport.ts`, `WifiDirectTransport.ts`, factory `createLinkTransport.ts`, shared `index.ts`) and `src/platform/service/*.ts` (native `RideService` wrapper, factory `createRideService.ts`, shared `index.ts`), except the frozen interface files. Web stand-ins (`*.web.ts`) belong to `web-verify`.
 
 ## Why local Expo modules, not TurboModules in android/
 

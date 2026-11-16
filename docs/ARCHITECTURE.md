@@ -12,7 +12,7 @@ src/core/                PURE TypeScript. No react-native. Fully unit-tested.
   pairing/               pairing payload: generate, encode, decode, validate
   session/               state machine, reconnect/backoff, testing/ fakes + two-peer simulation
   diagnostics/           ring-buffer log (redacting), stats sampler, report formatter
-src/platform/<area>/     interface + native (.ts) + web (.web.ts) implementations
+src/platform/<area>/     interface file + create<X>.ts (native) + create<X>.web.ts (web twin) + shared index.ts
   link/ media/ audio/ service/ permissions/ storage/
 src/features/            screens: onboarding, pair, home, ride, settings, diagnostics, debug
 src/app/                 navigation, theme, store, composition root
@@ -78,7 +78,7 @@ JS passes names (service type, channel id, strings) at runtime from `config/iden
 
 ## 7. Web verification target
 
-The app also builds for web (React Native Web) so the lead can drive it in headless Chromium. Every platform interface has a `.web.ts` implementation: real browser WebRTC for `MediaEngine`, `WebLinkTransport` over a dev WebSocket relay (`scripts/dev-relay.mjs`) so two browser contexts play host and guest, fakes for `AudioRoute`/`RideService`/`PermissionService`, a web-only dev panel (headset disconnected, link dropped, phone call started), and pairing via the paste-string path. Web proves UI, flows, session logic, signaling and WebRTC negotiation; it proves nothing about Bluetooth, Wi-Fi Direct, the foreground service or background behaviour. `scripts/check-android-bundle.mjs` asserts web-only markers never appear in the Android bundle.
+The app also builds for web (React Native Web) so the lead can drive it in headless Chromium. Every platform interface has a `.web.ts` twin of its factory module (`createLinkTransport.web.ts`, ...), exporting the same name as the native `create<X>.ts` (the shared `index.ts` re-exports; Metro resolves the twin on web): real browser WebRTC for `MediaEngine`, `WebLinkTransport` over a dev WebSocket relay (`scripts/dev-relay.mjs`) so two browser contexts play host and guest, fakes for `AudioRoute`/`RideService`/`PermissionService`, a web-only dev panel (headset disconnected, link dropped, phone call started), and pairing via the paste-string path. Web proves UI, flows, session logic, signaling and WebRTC negotiation; it proves nothing about Bluetooth, Wi-Fi Direct, the foreground service or background behaviour. `scripts/check-android-bundle.mjs` asserts web-only markers never appear in the Android bundle.
 
 ## 8. Renaming the product
 

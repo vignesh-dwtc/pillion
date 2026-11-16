@@ -30,6 +30,8 @@ One line per decision with the reason. IDs are stable; add new ones at the end o
 - **D-021 Jest runs in a plain Node environment (babel-preset-expo transform, `@noble` transpiled); no component tests.** Reason: a stray react-native import in `src/core` must fail its tests; UI is verified through the web build + Playwright screenshots, which is what the brief asks for.
 - **D-022 Developer features are gated by a runtime developer-mode switch (7 taps on the version label), not by `__DEV__`.** Reason: the test APK must carry the "paste pairing string" path, the earpiece/speaker override and the tunables screen, but those must stay hidden from ordinary use.
 - **D-023 Product-name-bearing labels inside crypto KDF strings (`pillion/v1/...`) are protocol identifiers, not display names.** Reason: they must stay stable across a rename; changing them is a protocol break (bump `PROTOCOL_VERSION`).
+- **D-026 Platform extension at the factory-module level.** Each `src/platform/<area>` has the interface file, `create<X>.ts` (native), `create<X>.web.ts` (web twin, same export name) and a shared `index.ts`. Reason: an `index.web.ts` would shadow the whole area on web; twins let Metro pick per module and keep the barrel shared, and a type-level parity test compares native and web signatures.
+- **D-027 Subagents run as general-purpose agents in the first session.** `.claude/agents/*.md` are the durable definitions (picked up by later sessions); this session started before `.claude/agents/` existed, so the harness did not load them. Each delegation told the agent to read its role file first and follow it. Reason: keeps the roles reusable without a restart.
 
 ## Cloud environment
 
