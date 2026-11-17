@@ -37,9 +37,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         android: {
           minSdkVersion: ANDROID_MIN_SDK,
+          // Ride-test release APK (assembleRelease): realistic performance, debug-signed, readable stack traces.
+          enableMinifyInReleaseBuilds: false,
         },
       },
     ],
     'expo-secure-store',
+    // Debug variant embeds the JS bundle so the CI APK runs without Metro (docs/DECISIONS.md D-009).
+    './plugins/withEmbeddedBundle',
   ],
 });
