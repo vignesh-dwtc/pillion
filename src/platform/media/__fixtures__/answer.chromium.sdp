@@ -1,0 +1,37 @@
+v=0
+o=- 8300394201558738558 2 IN IP4 127.0.0.1
+s=-
+t=0 0
+a=group:BUNDLE 0
+a=extmap-allow-mixed
+a=msid-semantic: WMS fdbc23a4-2ef2-404a-9614-a9ef93f9867b
+m=audio 9 UDP/TLS/RTP/SAVPF 111 63 9 0 8 13 110 126
+c=IN IP4 0.0.0.0
+a=rtcp:9 IN IP4 0.0.0.0
+a=ice-ufrag:pCTt
+a=ice-pwd:c6MPdpu/zmIbgmJh8lOevLXL
+a=ice-options:trickle
+a=fingerprint:sha-256 FB:4D:4E:92:85:A5:0C:12:D8:E0:C6:21:06:E6:35:61:91:D5:BD:55:C7:51:EF:26:1D:4F:6B:62:BB:B4:F7:8D
+a=setup:active
+a=mid:0
+a=extmap:1 urn:ietf:params:rtp-hdrext:ssrc-audio-level
+a=extmap:2 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
+a=extmap:3 http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
+a=extmap:4 urn:ietf:params:rtp-hdrext:sdes:mid
+a=sendrecv
+a=msid:fdbc23a4-2ef2-404a-9614-a9ef93f9867b 1b6bf9dc-cc69-4cae-832d-7b2c9b7992ee
+a=rtcp-mux
+a=rtcp-rsize
+a=rtcp-xr:rcvr-rtt=all
+a=rtpmap:111 opus/48000/2
+a=rtcp-fb:111 transport-cc
+a=fmtp:111 minptime=10;useinbandfec=1
+a=rtpmap:63 red/48000/2
+a=fmtp:63 111/111
+a=rtpmap:9 G722/8000
+a=rtpmap:0 PCMU/8000
+a=rtpmap:8 PCMA/8000
+a=rtpmap:13 CN/8000
+a=rtpmap:110 telephone-event/48000
+a=rtpmap:126 telephone-event/8000
+a=ssrc:2864525940 cname:hyawOr4BpL0PuZar

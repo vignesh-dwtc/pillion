@@ -1,0 +1,108 @@
+{
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+  "connectionState": "new",
+  "entries": [
+    {
+      "id": "AP",
+      "timestamp": 1794909275760.457,
+      "type": "media-playout",
+      "kind": "audio",
+      "synthesizedSamplesDuration": 0,
+      "synthesizedSamplesEvents": 0,
+      "totalPlayoutDelay": 0,
+      "totalSamplesCount": 0,
+      "totalSamplesDuration": 0
+    },
+    {
+      "id": "CF44:A5:16:90:A5:24:03:13:E0:13:EB:D0:AA:AD:5C:83:6B:ED:FC:E0:20:64:2F:7A:97:25:5F:F6:C9:66:F7:1B",
+      "timestamp": 1794909275760.457,
+      "type": "certificate",
+      "base64Certificate": "MIIBFzCBvaADAgECAgkA/LJirs/3ro8wCgYIKoZIzj0EAwIwETEPMA0GA1UEAwwGV2ViUlRDMB4XDTI2MTExNjA5NTQzNVoXDTI2MTIxNzA5NTQzNVowETEPMA0GA1UEAwwGV2ViUlRDMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE2YpPUUYby/89p0wyM3yS8NQXqsTG6XDbKjhHcqrScywP9i0eRP3/U7lJQ+JGQLJYeQQyRvmZt9MdbwsEaftUtjAKBggqhkjOPQQDAgNJADBGAiEA2qsiFOxsBZxCJDdrqACYAg6j3+3tghm7z61SRmNA8rICIQCUFI3uAtIDLS2J1NpyTfV8ysrd1TzF+SQ11xqr619edQ==",
+      "fingerprint": "44:A5:16:90:A5:24:03:13:E0:13:EB:D0:AA:AD:5C:83:6B:ED:FC:E0:20:64:2F:7A:97:25:5F:F6:C9:66:F7:1B",
+      "fingerprintAlgorithm": "sha-256"
+    },
+    {
+      "id": "INjF5XsC5",
+      "timestamp": 1794909275760.457,
+      "type": "local-candidate",
+      "address": "",
+      "candidateType": "host",
+      "foundation": "1627492833",
+      "ip": "",
+      "isRemote": false,
+      "networkType": "unknown",
+      "port": 9,
+      "priority": 1509959935,
+      "protocol": "tcp",
+      "tcpType": "active",
+      "transportId": "T01",
+      "usernameFragment": "R96N"
+    },
+    {
+      "id": "ImAgJmkAZ",
+      "timestamp": 1794909275760.457,
+      "type": "local-candidate",
+      "address": "",
+      "candidateType": "host",
+      "foundation": "1680766234",
+      "ip": "",
+      "isRemote": false,
+      "networkType": "unknown",
+      "port": 9,
+      "priority": 1509957375,
+      "protocol": "tcp",
+      "tcpType": "active",
+      "transportId": "T01",
+      "usernameFragment": "R96N"
+    },
+    {
+      "id": "IvlDP3xCj",
+      "timestamp": 1794909275760.457,
+      "type": "local-candidate",
+      "address": "",
+      "candidateType": "host",
+      "foundation": "3031584377",
+      "ip": "",
+      "isRemote": false,
+      "networkType": "unknown",
+      "port": 51716,
+      "priority": 2113937151,
+      "protocol": "udp",
+      "transportId": "T01",
+      "usernameFragment": "R96N"
+    },
+    {
+      "id": "P",
+      "timestamp": 1794909275760.457,
+      "type": "peer-connection",
+      "dataChannelsClosed": 0,
+      "dataChannelsOpened": 0
+    },
+    {
+      "id": "SA1",
+      "timestamp": 1794909275760.457,
+      "type": "media-source",
+      "kind": "audio",
+      "trackIdentifier": "9d2d976c-21ea-4b81-ac11-88455d5d2acf",
+      "audioLevel": 0,
+      "totalAudioEnergy": 0,
+      "totalSamplesDuration": 0.3000000000000001
+    },
+    {
+      "id": "T01",
+      "timestamp": 1794909275760.457,
+      "type": "transport",
+      "bytesReceived": 0,
+      "bytesSent": 0,
+      "dtlsRole": "unknown",
+      "dtlsState": "new",
+      "iceLocalUsernameFragment": "R96N",
+      "iceRole": "controlling",
+      "iceState": "new",
+      "localCertificateId": "CF44:A5:16:90:A5:24:03:13:E0:13:EB:D0:AA:AD:5C:83:6B:ED:FC:E0:20:64:2F:7A:97:25:5F:F6:C9:66:F7:1B",
+      "packetsReceived": 0,
+      "packetsSent": 0,
+      "selectedCandidatePairChanges": 0
+    }
+  ]
+}
