@@ -28,7 +28,13 @@ module.exports = {
     {
       displayName: 'platform',
       testEnvironment: 'node',
-      roots: ['<rootDir>/src/platform', '<rootDir>/src/app', '<rootDir>/src/features', '<rootDir>/scripts'],
+      roots: [
+        '<rootDir>/src/platform',
+        '<rootDir>/src/app',
+        '<rootDir>/src/features',
+        '<rootDir>/scripts',
+        '<rootDir>/plugins',
+      ],
       testMatch: ['**/*.test.ts'],
       moduleNameMapper,
       transform,

@@ -2,6 +2,7 @@ node_modules/
 android/
 ios/
 dist/
+dist-*/
 coverage/
 .expo/
 playwright-report/
@@ -11,3 +12,5 @@ package-lock.json
 # The brief is saved unchanged on purpose.
 docs/BRIEF.md
 docs/screenshots/
+modules/**/build/
+modules/**/.cxx/

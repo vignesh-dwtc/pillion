@@ -16,7 +16,7 @@ The brief (`docs/BRIEF.md`) defines the milestones; this file tracks status. Upd
 - [ ] `core/` implemented with tests: protocol, pairing payload, session state machine, reconnect policy, two-peer simulation.
 - [ ] App shell: navigation, placeholder screens, dark high-contrast theme with large touch targets.
 - [ ] Web build runs; Playwright smoke test passes; screenshots viewed.
-- [ ] CI workflow and `scripts/cloud-setup.sh`.
+- [x] CI workflow `.github/workflows/ci.yml` written (checks, web-e2e, android); YAML-parsed and reviewed by hand, NOT yet run on GitHub (actionlint could not be run here). `scripts/cloud-setup.sh` tested against a fresh temp SDK: clean install 24 s, idempotent re-run <1 s, exit 0 (DECISIONS D-029..D-032).
 - [x] Full `assembleDebug` (arm64) verified in the session: BUILD SUCCESSFUL in 2m 13s, 112 MB debug APK (DECISIONS E-3).
 
 ### M1 First voice on the same Wi-Fi - STATUS: not started

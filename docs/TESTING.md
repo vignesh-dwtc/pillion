@@ -8,6 +8,8 @@ npm run lint
 npm run format:check
 npm test                                  # Jest: src/core + logic-only platform code (Node environment)
 npm run web:build && npm run e2e          # web build + Playwright (headless Chromium, phone viewport, fake microphone)
+npm ci                                    # clean, lockfile-exact install (what CI runs first)
+bash scripts/cloud-setup.sh               # cloud sessions: SDK + Gradle mirror (idempotent; CLOUD_SETUP_SKIP_ENV=1 skips shell-profile edits)
 export ANDROID_HOME=/opt/android-sdk
 npm run android:compile                   # Kotlin compile gate
 npm run android:test                      # Kotlin JVM unit tests

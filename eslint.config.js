@@ -20,6 +20,7 @@ const PLATFORM_INTERFACE_FILES = [
 module.exports = defineConfig([
   globalIgnores([
     'dist/**',
+    'dist-*/**',
     'android/**',
     'ios/**',
     'node_modules/**',
