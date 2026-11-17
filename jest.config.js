@@ -14,6 +14,8 @@ const transform = {
 
 module.exports = {
   passWithNoTests: true,
+  // CI runners are slower than dev machines; the handshake fuzz tests do hundreds of real HMAC handshakes.
+  testTimeout: 30000,
   projects: [
     {
       displayName: 'core',
