@@ -51,7 +51,13 @@ module.exports = defineConfig([
   {
     // Native/shared code must not import web-only modules explicitly (Metro picks .web.ts by platform extension).
     files: ['**/*.{ts,tsx}'],
-    ignores: ['**/*.web.{ts,tsx}', 'e2e/**', 'scripts/**'],
+    ignores: [
+      '**/*.web.{ts,tsx}',
+      '**/*.test.{ts,tsx}',
+      'src/platform/parity.check.ts',
+      'e2e/**',
+      'scripts/**',
+    ],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -133,6 +139,28 @@ module.exports = defineConfig([
     },
   },
   {
+    // Platform code must not reach up into UI.
+    files: ['src/platform/**/*.{ts,tsx}'],
+    // web twins, their tests and the parity check may reference other web modules
+    ignores: ['**/*.web.{ts,tsx}', '**/*.test.{ts,tsx}', 'src/platform/parity.check.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            { group: ['**/features/**', '**/app/**'], message: 'src/platform cannot depend on UI layers.' },
+            {
+              group: ['**/*.web', '**/*.web.ts', '**/*.web.tsx'],
+              message: 'Never import web-only modules from native code.',
+            },
+          ],
+        },
+      ],
+      // NOTE: flat config replaces a rule's options per file; every no-restricted-imports block that can match a
+      // file must therefore list ALL patterns that apply to it (the interface-file block above repeats them).
+    },
+  },
+  {
     // Platform interface files are imported by core: they must stay free of react-native.
     files: PLATFORM_INTERFACE_FILES.map((f) => `src/platform/${f}`),
     rules: {
@@ -153,20 +181,11 @@ module.exports = defineConfig([
               message:
                 'Platform interface files are imported by src/core and must not import react-native / expo.',
             },
-          ],
-        },
-      ],
-    },
-  },
-  {
-    // Platform code must not reach up into UI.
-    files: ['src/platform/**/*.{ts,tsx}'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
             { group: ['**/features/**', '**/app/**'], message: 'src/platform cannot depend on UI layers.' },
+            {
+              group: ['**/*.web', '**/*.web.ts', '**/*.web.tsx'],
+              message: 'Never import web-only modules from native code.',
+            },
           ],
         },
       ],

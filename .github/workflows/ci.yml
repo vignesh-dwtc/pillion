@@ -106,7 +106,7 @@ jobs:
             gradle-${{ runner.os }}-
       - name: Assemble debug APK and run Kotlin unit tests
         working-directory: android
-        run: ./gradlew :app:assembleDebug :app:testDebugUnitTest -PreactNativeArchitectures=arm64-v8a --no-daemon --console=plain
+        run: ./gradlew :app:assembleDebug testDebugUnitTest -PreactNativeArchitectures=arm64-v8a --no-daemon --console=plain
       - name: Upload debug APK
         uses: actions/upload-artifact@v7
         with:
