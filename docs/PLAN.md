@@ -17,7 +17,7 @@ The brief (`docs/BRIEF.md`) defines the milestones; this file tracks status. Upd
 - [ ] App shell: navigation, placeholder screens, dark high-contrast theme with large touch targets.
 - [ ] Web build runs; Playwright smoke test passes; screenshots viewed.
 - [ ] CI workflow and `scripts/cloud-setup.sh`.
-- [ ] Full `assembleDebug` (arm64) verified in the session.
+- [x] Full `assembleDebug` (arm64) verified in the session: BUILD SUCCESSFUL in 2m 13s, 112 MB debug APK (DECISIONS E-3).
 
 ### M1 First voice on the same Wi-Fi - STATUS: not started
 
