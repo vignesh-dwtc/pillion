@@ -1,3 +1,4 @@
+import IDENTITY from '../../../config/identity.json';
 import type { LogData } from '../common/types';
 
 /**
@@ -7,7 +8,18 @@ import type { LogData } from '../common/types';
  *  2. by VALUE: any string that looks like a 32-byte secret (64 hex characters, or base64 / base64url of 32 bytes)
  *     is replaced wherever it appears, in data values and in free text. This catches a secret that was logged under
  *     an innocent key or pasted into a message.
+ *     The same layer also catches (a) a pairing string (`<pairingPrefix><version>:<base64url payload>`, prefix from
+ *     config/identity.json) and (b) a 32-byte secret glued to other characters inside a longer token.
  * Callers must still never log such values; this is the safety net, not the policy.
+ *
+ * Limits of the value layer (heuristics, deliberately conservative to avoid false-positive explosions):
+ *  - a glued secret is found only inside a run of base64/base64url characters (A-Z a-z 0-9 + / _ -) that is longer
+ *    than 43 characters and contains a 43-character window mixing upper case, lower case and digits (random
+ *    base64 does with probability ~99.9%; plain words, slugs and UUIDs do not), or 64 consecutive hex digits anywhere in the run
+ *    (a longer hex run, a hash for instance, is redacted whole: no loss). A secret split by other characters, or re-encoded
+ *    (for example with spaces or line breaks inserted), is not recognised;
+ *  - the Wi-Fi passphrase has no recognisable shape: it is removed, also when glued to other text, only through
+ *    `RedactOptions.literals` (substring match); without the literal nothing can tell it from ordinary text.
  */
 
 export const REDACTED = '[redacted]';
@@ -35,6 +47,30 @@ export function looksLikeSecret(token: string): boolean {
   return false;
 }
 
+const PREFIX = String(IDENTITY.pairingPrefix).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** A pairing string: prefix, version digits, ':' and the base64url payload (with optional padding). */
+const PAIRING_STRING = new RegExp(`${PREFIX}\\d+:[A-Za-z0-9_-]+=*`, 'g');
+const HEX_RUN_64 = /[0-9A-Fa-f]{64}/;
+
+/** True when a base64/base64url run longer than a secret holds a window that looks like one (see the limits above). */
+function containsEmbeddedSecret(token: string): boolean {
+  if (token.length <= 43) return false;
+  if (HEX_RUN_64.test(token)) return true;
+  for (let start = 0; start + 43 <= token.length; start += 1) {
+    let upper = false;
+    let lower = false;
+    let digit = false;
+    for (let i = start; i < start + 43; i += 1) {
+      const code = token.charCodeAt(i);
+      if (code >= 65 && code <= 90) upper = true;
+      else if (code >= 97 && code <= 122) lower = true;
+      else if (code >= 48 && code <= 57) digit = true;
+    }
+    if (upper && lower && digit) return true;
+  }
+  return false;
+}
+
 export interface RedactOptions {
   /** Exact values that must never appear (the pairing secret, the Wi-Fi passphrase). Shorter than 6 are ignored. */
   literals?: readonly string[];
@@ -42,7 +78,10 @@ export interface RedactOptions {
 
 /** Replaces secret-looking tokens and the given literals inside free text. */
 export function redactText(text: string, options: RedactOptions = {}): string {
-  let out = text.replace(TOKEN, (token) => (looksLikeSecret(token) ? REDACTED : token));
+  let out = text.replace(PAIRING_STRING, REDACTED);
+  out = out.replace(TOKEN, (token) =>
+    looksLikeSecret(token) || containsEmbeddedSecret(token) ? REDACTED : token,
+  );
   for (const literal of options.literals ?? []) {
     if (typeof literal === 'string' && literal.length >= 6 && out.includes(literal)) {
       out = out.split(literal).join(REDACTED);

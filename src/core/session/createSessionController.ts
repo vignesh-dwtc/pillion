@@ -445,6 +445,8 @@ class SessionControllerImpl implements SessionControllerWithStats {
       recoverable: false,
       detail: describeError(error),
     });
+    // 'unavailable' means "not applicable on this OS / platform" (PermissionService.ts), never "denied": on web
+    // the browser prompts at getUserMedia time, so it is granted-equivalent. A real denial is 'denied'/'blocked'.
     const missing = (status: PermissionStatus): PermissionKey[] =>
       required.filter((key) => status[key] !== 'granted' && status[key] !== 'unavailable');
 
@@ -822,8 +824,18 @@ class SessionControllerImpl implements SessionControllerWithStats {
   ): Promise<void> {
     const { clock } = this.deps;
     const limit = INTERNAL_TIMINGS.releaseTimeoutMs;
-    if (inflight) await settleWithin(clock, inflight, limit);
+    const started = inflight ? await settleWithin(clock, inflight, limit) : null;
     const result = await settleCall(clock, stop, limit);
+    if (inflight && started?.status === 'timeout') {
+      // The native start outlived the step timeout and the release grace: when it finally completes it would leave
+      // the microphone / audio route / service active after the ride ended, so stop it again at that point.
+      detach(
+        inflight.then(() => {
+          this.log('warn', `the ${what} finished starting after the ride ended; stopping it again`);
+          detach(callAsync(stop));
+        }),
+      );
+    }
     if (result.status !== 'fulfilled') {
       this.log('warn', `releasing the ${what} did not complete cleanly`, {
         outcome: result.status,

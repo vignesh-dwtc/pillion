@@ -168,3 +168,43 @@ describe('createStatsPoller', () => {
     poller.stop();
   });
 });
+
+describe('createStatsPoller: stop() clears its timer', () => {
+  it('leaves no pending timer immediately after stop(), before any time passes', async () => {
+    const clock = new ManualClock(0);
+    const poller = createStatsPoller({
+      clock,
+      intervalMs: 1000,
+      source: async () => stats({ timestamp: clock.now() }),
+      onSample: () => undefined,
+    });
+    expect(clock.pendingTimers()).toBe(1);
+    poller.stop();
+    expect(clock.pendingTimers()).toBe(0);
+    await clock.advance(5000);
+    expect(clock.pendingTimers()).toBe(0);
+  });
+
+  it('leaves no pending timer when stopped while a poll is in flight', async () => {
+    const clock = new ManualClock(0);
+    let release: () => void = () => undefined;
+    let samples = 0;
+    const poller = createStatsPoller({
+      clock,
+      intervalMs: 1000,
+      source: () =>
+        new Promise((resolve) => {
+          release = () => resolve(stats({ timestamp: clock.now() }));
+        }),
+      onSample: () => {
+        samples += 1;
+      },
+    });
+    await clock.advance(1000); // the poll starts and hangs
+    poller.stop();
+    release();
+    await clock.settle();
+    expect(samples).toBe(0);
+    expect(clock.pendingTimers()).toBe(0);
+  });
+});
