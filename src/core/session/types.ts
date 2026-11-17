@@ -1,7 +1,7 @@
 import type { AudioRoute } from '../../platform/audio/AudioRoute';
 import type { AudioTunables } from '../../platform/audio/AudioTunables';
 import type { LinkKind, LinkRole, LinkTransport } from '../../platform/link/LinkTransport';
-import type { MediaEngine } from '../../platform/media/MediaEngine';
+import type { MediaEngine, MediaStats } from '../../platform/media/MediaEngine';
 import type { PermissionService } from '../../platform/permissions/PermissionService';
 import type { RideService } from '../../platform/service/RideService';
 import type { Clock, Logger, Unsubscribe } from '../common/types';
@@ -95,6 +95,8 @@ export interface SessionController {
   setMuted(muted: boolean): void;
   /** Ends the ride: tells the partner (bye), releases media, audio route and the foreground service. Idempotent. */
   end(): Promise<void>;
+  /** Latest live media stats (for the diagnostics screen); null when no media session exists. */
+  getMediaStats(): Promise<MediaStats | null>;
 }
 
 export interface SessionConfig {
