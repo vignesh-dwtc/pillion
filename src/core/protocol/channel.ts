@@ -246,8 +246,21 @@ export class SecureChannelImpl implements SecureChannel {
 
   private deliver(message: SessionMessage): void {
     if (this.backlog !== null) {
+      if (this.backlog.length >= MAX_BACKLOG_MESSAGES) {
+        // Dropping a message here would be undetectable (its MAC counter is already consumed), so a lost early
+        // `sdp` or `bye` would hang the session instead of failing it. Fail closed and discard the queue instead.
+        this.backlog = [];
+        this.shutdown(
+          'closed',
+          new ProtocolError(
+            'closed',
+            `more than ${MAX_BACKLOG_MESSAGES} messages arrived before any listener`,
+          ),
+          true,
+        );
+        return;
+      }
       this.backlog.push(message);
-      if (this.backlog.length > MAX_BACKLOG_MESSAGES) this.backlog.shift();
       return;
     }
     this.dispatch(message);

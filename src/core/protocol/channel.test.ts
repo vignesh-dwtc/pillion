@@ -478,15 +478,34 @@ describe('SecureChannelImpl: listeners, backlog and close semantics', () => {
     expect(late).toEqual([]);
   });
 
-  it('bounds the backlog: only the newest MAX_BACKLOG_MESSAGES are kept', async () => {
+  it('keeps exactly MAX_BACKLOG_MESSAGES queued messages without closing', async () => {
     const { guest, host } = makePair();
-    const total = MAX_BACKLOG_MESSAGES + 10;
-    for (let i = 0; i < total; i++) await guest.send(ping(i));
+    for (let i = 0; i < MAX_BACKLOG_MESSAGES; i++) await guest.send(ping(i));
     await settle();
+    expect(host.closeError).toBeNull();
     const late = collect(host);
     expect(late.length).toBe(MAX_BACKLOG_MESSAGES);
-    expect(late[0]).toEqual(ping(10));
-    expect(late[late.length - 1]).toEqual(ping(total - 1));
+    expect(late[0]).toEqual(ping(0));
+    expect(late[late.length - 1]).toEqual(ping(MAX_BACKLOG_MESSAGES - 1));
+  });
+
+  it('fails closed when the backlog overflows: no message is silently dropped', async () => {
+    const { guest, host } = makePair();
+    const hostClosed: string[] = [];
+    host.onClose((reason) => hostClosed.push(reason));
+    for (let i = 0; i < MAX_BACKLOG_MESSAGES; i++) await guest.send(ping(i));
+    await settle();
+    expect(host.closeError).toBeNull();
+    // One more authenticated message than the backlog holds.
+    await guest.send(ping(MAX_BACKLOG_MESSAGES)).catch(() => undefined);
+    await settle();
+    expect(host.closeError).toBeInstanceOf(ProtocolError);
+    expect(host.closeError?.code).toBe('closed');
+    expect(hostClosed).toEqual(['closed']);
+    // The transport is closed too, so the peer learns about it instead of waiting.
+    expect(guest.closeError).not.toBeNull();
+    // The queue is discarded, never handed to a late subscriber.
+    expect(collect(host)).toEqual([]);
   });
 
   it('a throwing listener does not stop delivery to others or break the channel', async () => {

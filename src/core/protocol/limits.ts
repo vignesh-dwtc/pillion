@@ -19,7 +19,8 @@ export const DEFAULT_HANDSHAKE_TIMEOUT_MS = 5000;
 
 /**
  * Messages that arrive before the first `onMessage` listener subscribes (for example an SDP offer that shares a TCP
- * chunk with `ready`) are queued up to this many; beyond it the oldest are dropped. In practice the session
+ * chunk with `ready`) are queued up to this many; one more closes the channel (fail closed: a silently dropped
+ * message would be undetectable because its MAC counter is already consumed). In practice the session
  * subscribes within one microtask of establishSecureChannel resolving, so the queue holds a handful at most.
  */
 export const MAX_BACKLOG_MESSAGES = 256;
