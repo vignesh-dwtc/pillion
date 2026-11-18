@@ -1,5 +1,7 @@
 package expo.modules.intercom.logic
 
+import java.net.SocketException
+
 enum class IfaceKind(val wireName: String) {
   WIFI("wifi"),
   WIFI_DIRECT("wifi-direct"),
@@ -77,4 +79,20 @@ object AdvertiseAddressSelector {
     if (p.size != 4) return false
     return p[0] == 10 || (p[0] == 172 && p[1] in 16..31) || (p[0] == 192 && p[1] == 168)
   }
+}
+
+/**
+ * Reads every interface with [read], skipping the ones whose read throws [SocketException]. `NetworkInterface.isUp`,
+ * `supportsMulticast` and friends query the kernel each time and throw when an interface disappears mid-listing
+ * (Wi-Fi Direct groups and hotspots come and go), which must cost that one entry, not the whole listing.
+ */
+object InterfaceSnapshot {
+  fun <T> readAll(items: List<T>, read: (T) -> IfaceInfo): List<IfaceInfo> =
+    items.mapNotNull { item ->
+      try {
+        read(item)
+      } catch (_: SocketException) {
+        null
+      }
+    }
 }

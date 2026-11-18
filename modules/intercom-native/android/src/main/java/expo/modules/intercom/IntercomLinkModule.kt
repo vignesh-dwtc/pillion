@@ -6,10 +6,12 @@ import android.net.NetworkCapabilities
 import android.os.Build
 import expo.modules.intercom.logic.IfaceInfo
 import expo.modules.intercom.logic.InterfaceClassifier
+import expo.modules.intercom.logic.InterfaceSnapshot
 import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import java.net.NetworkInterface
+import java.net.SocketException
 
 /**
  * JS name `IntercomLink`: a dumb byte pipe (see specs/IntercomLink.ts). M0 skeleton: read-only calls are real
@@ -50,22 +52,38 @@ class IntercomLinkModule : Module() {
     AsyncFunction("dispose") { notYet("dispose") }
   }
 
+  /**
+   * True when ANY Wi-Fi (station) network is connected, not only the default one. `activeNetwork` is the default
+   * network, and Android does not make a Wi-Fi network without internet (a router-only LAN or the partner's
+   * hotspot: this app's core case) the default while mobile data is up, so checking it alone would report "not
+   * connected" exactly when the two phones share such a network.
+   */
   private fun isWifiConnected(context: Context): Boolean {
     val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-    val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
-    return caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+    @Suppress("DEPRECATION") // allNetworks: deprecated in API 31 in favour of callbacks, still correct for a one-off query.
+    val networks = cm.allNetworks
+    return networks.any { network ->
+      cm.getNetworkCapabilities(network)?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+    }
   }
 
   private fun listInterfaces(): List<Map<String, Any?>> {
-    val all = NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()
-    return all.map { ni ->
-      val info = IfaceInfo(
+    val all = try {
+      NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()
+    } catch (_: SocketException) {
+      emptyList()
+    }
+    // An interface can vanish between the listing and the reads below (SocketException): skip it, keep the rest.
+    val infos = InterfaceSnapshot.readAll(all) { ni ->
+      IfaceInfo(
         name = ni.name,
         kind = InterfaceClassifier.classify(ni.name, ni.isLoopback),
         addresses = ni.inetAddresses.toList().mapNotNull { it.hostAddress },
         up = ni.isUp,
         multicast = ni.supportsMulticast(),
       )
+    }
+    return infos.map { info ->
       mapOf(
         "name" to info.name,
         "kind" to info.kind.wireName,

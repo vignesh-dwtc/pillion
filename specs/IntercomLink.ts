@@ -156,7 +156,7 @@ export declare class IntercomLinkNativeModule extends NativeModule<IntercomLinkE
   readonly API_VERSION: number;
 
   getInfo(): Promise<LinkModuleInfo>;
-  /** True when the active network has the Wi-Fi transport (a Wi-Fi Direct group counts after M2). */
+  /** True when any connected network has the Wi-Fi transport, default or not (a Wi-Fi Direct group counts after M2). */
   isWifiConnected(): Promise<boolean>;
   listInterfaces(): Promise<NativeNetworkInterface[]>;
 

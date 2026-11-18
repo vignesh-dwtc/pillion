@@ -76,4 +76,17 @@ class NetworkInterfacesTest {
     assertFalse(AdvertiseAddressSelector.isIpv4("1.2.3.256"))
     assertFalse(AdvertiseAddressSelector.isIpv4("a.b.c.d"))
   }
+
+  @Test fun snapshotSkipsInterfacesThatVanishMidRead() {
+    val names = listOf("wlan0", "p2p-wlan0-0", "lo")
+    val result = InterfaceSnapshot.readAll(names) { name ->
+      if (name.startsWith("p2p")) throw java.net.SocketException("No such device")
+      iface(name, "192.168.1.20")
+    }
+    assertEquals(listOf("wlan0", "lo"), result.map { it.name })
+  }
+
+  @Test fun snapshotOfNothingIsEmpty() {
+    assertTrue(InterfaceSnapshot.readAll(emptyList<String>()) { iface(it) }.isEmpty())
+  }
 }
