@@ -8,6 +8,7 @@
     "android": "expo run:android",
     "web": "expo start --web",
     "web:build": "expo export --platform web",
+    "check:bundle": "node scripts/check-android-bundle.mjs",
     "web:serve": "node scripts/serve-web.mjs",
     "relay": "node scripts/dev-relay.mjs",
     "typecheck": "tsc --noEmit",

@@ -33,6 +33,9 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm test
+      # Web-only code (fakes, dev relay, the localStorage secure-store stand-in) must never reach the Android bundle:
+      # exports the Hermes bundle and scans it for web-only markers (docs/ARCHITECTURE.md section 7).
+      - run: npm run check:bundle
 
   web-e2e:
     name: Web build and Playwright e2e
@@ -48,6 +51,8 @@ jobs:
       # Installs the Chromium that matches the pinned @playwright/test version, plus system libraries.
       - run: npx playwright install --with-deps chromium
       - run: npm run web:build
+      # Self-test of the bundle guard: the web export DOES contain the web-only markers, so the scan can see them.
+      - run: node scripts/check-android-bundle.mjs --dir dist --expect-found
       - run: npm run e2e
         env:
           CI: 'true'
@@ -88,20 +93,33 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
+      # android/ is generated from app.config.ts + config plugins and committed: fail when it drifted from a fresh
+      # prebuild (a hand edit inside android/, or a config change without `npm run prebuild:android`).
+      - name: Check android/ matches a fresh expo prebuild
+        run: |
+          set -euo pipefail
+          npm run prebuild:android
+          if ! git diff --exit-code -- android || [ -n "$(git status --porcelain -- android)" ]; then
+            git status --porcelain -- android
+            echo "::error::android/ differs from 'npm run prebuild:android': regenerate it and commit the result"
+            exit 1
+          fi
       - name: Install Android SDK packages
         run: |
           set -euo pipefail
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="$(command -v sdkmanager)"; fi
-          # `yes` closes the pipe when sdkmanager exits: SIGPIPE is expected, so tolerate it.
-          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          # `yes` dies of SIGPIPE when sdkmanager exits, which is expected: drop pipefail for this one pipeline only, so
+          # its status is sdkmanager's own and a real licence failure still fails the step.
+          (set +o pipefail; yes | "$SDKMANAGER" --licenses >/dev/null)
+          test -f "$ANDROID_HOME/licenses/android-sdk-license" || { echo "::error::Android SDK licence not accepted"; exit 1; }
           "$SDKMANAGER" "platform-tools" "$ANDROID_PLATFORM" "$ANDROID_BUILD_TOOLS" "$ANDROID_NDK" "$ANDROID_CMAKE"
       - uses: actions/cache@v6
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties', 'package-lock.json') }}
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties', 'modules/**/*.gradle*', 'package-lock.json') }}
           restore-keys: |
             gradle-${{ runner.os }}-
       - name: Assemble debug APK and run Kotlin unit tests
