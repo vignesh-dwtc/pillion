@@ -184,8 +184,9 @@ export function DevPanel(): ReactElement | null {
   );
 }
 
-const ACCENT = '#c4b5fd';
-const PANEL_BACKGROUND = '#181030';
+// Brass Chronograph palette (src/app/theme.ts), kept as literals so the web-only panel imports nothing extra.
+const ACCENT = '#D2AE6D';
+const PANEL_BACKGROUND = '#15130F';
 
 const styles = StyleSheet.create({
   // Covers the screen but lets every touch through except on the tab and the open panel.
@@ -249,8 +250,8 @@ const styles = StyleSheet.create({
   },
   title: { color: ACCENT, fontSize: 13, fontWeight: '700' },
   row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
-  rowLabel: { color: '#e5e7eb', fontSize: 13, minWidth: 150 },
-  rowValue: { color: '#fde68a', fontWeight: '700' },
+  rowLabel: { color: '#F3EBDD', fontSize: 13, minWidth: 150 },
+  rowValue: { color: '#EDB65A', fontWeight: '700' },
   buttons: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   button: {
     minHeight: 34,
@@ -263,6 +264,6 @@ const styles = StyleSheet.create({
   },
   buttonActive: { backgroundColor: ACCENT },
   buttonText: { color: ACCENT, fontSize: 13, fontWeight: '600' },
-  buttonTextActive: { color: '#1e1b4b' },
-  footer: { color: '#9ca3af', fontSize: 11 },
+  buttonTextActive: { color: '#17110A' },
+  footer: { color: '#9C9282', fontSize: 11 },
 });

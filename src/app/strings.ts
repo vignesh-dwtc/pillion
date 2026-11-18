@@ -18,6 +18,15 @@ export const strings = {
     notAvailable: 'n/a',
     yes: 'Yes',
     no: 'No',
+    later: 'Later',
+    next: 'Next',
+    allClear: 'All clear',
+    offline: 'Offline',
+  },
+
+  brand: {
+    tagline: 'Two-up touring intercom',
+    versionLabel: (version: string) => `Offline · v${version}`,
   },
 
   placeholder: {
@@ -31,10 +40,34 @@ export const strings = {
 
   onboarding: {
     title: `Welcome to ${name}`,
+    eyebrow: 'Before the first ride',
+    plateOf: (n: string) => `Plate ${n} of IV`,
+    plates: {
+      intro: {
+        title: 'One link, two riders',
+        body: 'A hands-free voice link between the two phones on one bike. No signal, no server, no account.',
+      },
+      microphone: {
+        title: 'Your voice',
+        body: 'Allow the microphone and your earbuds so your pillion hears you. Nothing is ever recorded.',
+      },
+      nearbyDevices: {
+        title: 'Find each other',
+        body: 'Allow nearby devices so the two phones connect directly, even far from any Wi-Fi or mobile signal.',
+      },
+      notifications: {
+        title: 'Ride in your pocket',
+        body: 'Allow notifications so the ride keeps running with the screen off, with Mute and End at hand.',
+      },
+    },
+    allowAll: 'Allow',
+    begin: 'Begin',
+    granted: 'Allowed',
+    needed: 'Needed',
     intro: 'A hands-free voice link between two phones on one bike. It works without any mobile signal.',
     steps: [
       'Keep your phone in your pocket and wear your own earbuds.',
-      'Each of you opens the app and taps Start. The link comes up on its own.',
+      'Each of you opens the app and taps Begin ride. The link comes up on its own.',
       'Short sounds tell you when you are connected, disconnected or muted.',
     ],
     safety: 'Set everything up before you ride. Never handle your phone while the bike is moving.',
@@ -64,7 +97,7 @@ export const strings = {
     },
     status: {
       granted: 'Allowed',
-      denied: 'Not allowed yet',
+      denied: 'Needed',
       blocked: 'Blocked in system settings',
       undetermined: 'Not asked yet',
       unavailable: 'Not needed on this phone',
@@ -73,6 +106,39 @@ export const strings = {
 
   home: {
     tagline: 'Hands-free intercom for two',
+    dialLegend: 'Rider · Pillion · Offline · Hands-free · One link',
+    dialLegendShort: 'Offline · Hands-free · One link',
+    dialPaired: 'Paired',
+    dialUnpaired: 'Awaiting a partner',
+    dialSince: (date: string) => `Since ${date}`,
+    dialLast: (duration: string) => `Last ${duration}`,
+    dialRider: 'Rider',
+    dialPillion: 'Pillion',
+    dialPairedLabel: (you: string, partner: string, since: string) =>
+      `Paired: ${you} and ${partner}, since ${since}.`,
+    dialUnpairedLabel: 'Not paired yet. Pair once, then every ride is one tap.',
+    ready: (you: string) => `Ready to ride, ${you}`,
+    readyPlain: 'Ready to ride',
+    readyBody: 'Both phones tap Begin. The link comes up on its own; you will hear a chime.',
+    notPairedTitle: 'Two phones, one link',
+    notPairedBody: 'Pair the two phones once, face to face. After that every ride is one tap.',
+    pairPlate: 'Pair your pillion',
+    pairPlateSub: 'Show your pairing plate · rider’s phone',
+    begin: 'Begin ride',
+    beginSub: (partner: string) => `Connects to ${partner} · works offline`,
+    tellEarbuds: 'Earbuds',
+    tellPartner: 'Partner',
+    tellMic: 'Mic & alerts',
+    earbudsReady: 'Ready',
+    earbudsMissing: 'Not connected',
+    partnerPaired: 'Paired',
+    partnerNone: 'None',
+    micReady: 'Allowed',
+    micNeeded: 'Needed',
+    batterySaver: 'Battery saver may pause audio',
+    pairNew: 'Show my pairing plate',
+    scanPlate: 'Scan partner’s plate',
+    scanPlateHint: 'I am the pillion, usually',
     partnerHeading: 'Your partner',
     notPaired: 'Not paired yet',
     notPairedHint: 'Pair once, then every ride is one tap.',
@@ -93,7 +159,20 @@ export const strings = {
   },
 
   pairHost: {
-    title: 'Show your code',
+    title: 'Pair a partner',
+    eyebrow: 'Host · Rider’s phone',
+    steps: ['Show plate', 'Partner scans', 'Chime'],
+    stepLabel: (n: number, name: string, active: boolean) =>
+      `Step ${n} of 3: ${name}${active ? ', current step' : ''}`,
+    plateTitle: 'Pairing plate',
+    plateCaption: 'One time · Offline',
+    privacy: 'The plate holds a one-time key. It never leaves these two phones.',
+    howTo: [
+      'Hold this phone up, screen bright, at arm’s length.',
+      'Your pillion opens Scan partner’s plate and aims the camera.',
+      'You both hear a chime when the phones are paired.',
+    ],
+    howToHeading: 'How it works',
     instruction: 'On your partner’s phone, choose “Scan partner code” and point the camera at this code.',
     sampleChip: 'Sample code, not a real pairing',
     qrLabel: 'Sample QR code. A real pairing code is shown in the next milestone.',
@@ -102,7 +181,11 @@ export const strings = {
   },
 
   pairGuest: {
-    title: 'Scan partner code',
+    title: 'Scan partner’s plate',
+    eyebrow: 'Guest · Pillion’s phone',
+    caption: 'Fit the pairing plate inside the brass frame.',
+    cameraDenied: 'The camera is off for this app. Allow it in your phone settings to scan the plate.',
+    openSettings: 'Open settings',
     instruction:
       'Hold your phone 20 to 30 cm from your partner’s screen until the code fits inside the frame.',
     viewfinder: 'Camera preview appears here',
@@ -118,6 +201,38 @@ export const strings = {
 
   ride: {
     title: 'Ride',
+    onTheRoad: 'On the road',
+    gaugeLinked: 'Linked',
+    gaugeConnecting: 'Connecting',
+    gaugeReconnecting: 'Reconnecting',
+    gaugeIdle: 'Standing by',
+    gaugeLegend: 'Voice link',
+    rideTime: 'Ride time',
+    delayLegend: 'Delay',
+    batteryLegend: 'Battery',
+    msUnit: 'ms',
+    withPartner: (partner: string) => `with ${partner}`,
+    caption: 'Voice clear · Wi-Fi Direct · screen can go dark, audio continues',
+    gaugeSummary: (quality: string, delayMs: string, partner: string, battery: string) =>
+      `Voice link ${quality}, ${delayMs} millisecond delay, ${partner}'s battery ${battery}`,
+    quality: { strong: 'strong', fair: 'fair', weak: 'weak', down: 'down' },
+    tellEarbuds: 'Earbuds',
+    tellPartnerMic: (partner: string) => `${partner}'s mic`,
+    tellLink: 'Link',
+    tellBattery: 'Your battery',
+    earbudsOn: 'Connected',
+    earbudsOff: 'Not connected',
+    micLive: 'Live',
+    micMuted: 'Muted',
+    linkUp: 'Linked',
+    linkSearching: 'Searching',
+    linkRetrying: 'Retrying',
+    muteSub: 'Your mic is live',
+    mutedSub: (partner: string) => `${partner} can't hear you`,
+    endSub: 'Hold 1 s · hangs up both phones',
+    endHolding: (seconds: number) => `Keep holding · ${seconds.toFixed(2).replace(/0$/, '')} s`,
+    endConfirm: 'Activate again to end the ride',
+    endA11yHint: 'Press and hold for one second to end the ride on both phones.',
     states: {
       idle: 'Not started',
       starting: 'Starting',
@@ -145,6 +260,7 @@ export const strings = {
 
   settings: {
     title: 'Settings',
+    eyebrow: 'Workshop',
     deviceHeading: 'This phone',
     deviceNameLabel: 'Your name',
     deviceNameHint: 'Your partner sees this name.',
@@ -170,6 +286,17 @@ export const strings = {
 
   diagnostics: {
     title: 'Diagnostics',
+    eyebrow: 'Instruments',
+    rtt: 'RTT',
+    jitter: 'Jitter',
+    loss: 'Loss',
+    level: 'Level',
+    checksHeading: 'Checks',
+    checkLink: 'Voice link',
+    checkLoss: 'Packet loss',
+    checkHeadset: 'Headset',
+    checkOk: 'OK',
+    checkWarn: 'Check',
     share: 'Share diagnostics',
     shareHint: 'Sends this report as text. It never contains the pairing secret or the Wi-Fi passphrase.',
     shared: 'Report handed to the share sheet.',
@@ -190,6 +317,16 @@ export const strings = {
 
   debug: {
     title: 'Developer tools',
+    eyebrow: 'Workshop sheet',
+    overridesActive: 'Developer overrides are active on this phone.',
+    previewHeading: 'Ride preview (sample data)',
+    previewHint: 'Shows the ride screen in a chosen state until the live session arrives.',
+    previewStates: {
+      connected: 'Linked',
+      connecting: 'Connecting',
+      reconnecting: 'Reconnecting',
+      'headset-missing': 'No headset',
+    },
     intro: 'Hidden screen for tuning on the road. Changes apply immediately and are saved on this phone.',
     tunablesHeading: 'Audio tunables',
     changed: 'Changed from default',

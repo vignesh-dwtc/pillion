@@ -1,31 +1,67 @@
 import { useIsFocused } from '@react-navigation/native';
-import type { ReactNode } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { memo, type ReactNode } from 'react';
+import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { strings } from '../../app/strings';
-import { borderWidth, colors, contentMaxWidth, hit, radius, spacing } from '../../app/theme';
+import { colors, contentMaxWidth, gutter, spacing } from '../../app/theme';
 
-import { AppText } from './AppText';
-import { Icon } from './Icon';
+import { AppText, Legend } from './AppText';
+import { Stagger } from './motion/Entrance';
+import { RingButton } from './RingButton';
+
+/** Decorative warm radial lift at the top of every screen (behind the header and hero dials). */
+export const RadialLift = memo(function RadialLift({ height = 420 }: { height?: number }) {
+  const { width } = useWindowDimensions();
+  return (
+    <View
+      aria-hidden
+      importantForAccessibility="no-hide-descendants"
+      pointerEvents="none"
+      style={{ position: 'absolute', left: 0, right: 0, top: 0, height }}
+    >
+      <Svg width={width} height={height}>
+        <Defs>
+          <RadialGradient id="lift" cx="50%" cy="18%" rx="75%" ry="70%">
+            <Stop offset="0" stopColor={colors.bgLift} stopOpacity={1} />
+            <Stop offset="1" stopColor={colors.bg} stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Rect x={0} y={0} width={width} height={height} fill="url(#lift)" />
+      </Svg>
+    </View>
+  );
+});
 
 /**
- * Common screen frame: black background, edge-to-edge safe-area insets, a header with a 56 dp+ back button and a
- * centred, width-limited content column. `testID` goes on the root so every screen has a stable `screen-*` id.
+ * Common screen frame: warm near-black background with a radial lift, edge-to-edge safe-area insets, 22 dp gutters,
+ * a centred column (max 560), and a header made of a 48 dp ring button, an engraved eyebrow legend and a Marcellus
+ * title. Children enter with a 60 ms stagger (fade + 8 dp rise; reduced motion: crossfade). `testID` goes on the
+ * root so every screen has a stable `screen-*` id.
  */
 export function Screen({
   testID,
   title,
+  eyebrow,
   onBack,
+  action,
+  header,
   children,
   footer,
   scroll = true,
   subtitle,
 }: {
   testID: string;
-  title: string;
+  title?: string;
+  /** Legend above the title. */
+  eyebrow?: string;
   /** Omit on screens without a back button (home, ride). */
   onBack?: () => void;
+  /** Right-hand header element (a RingButton). */
+  action?: ReactNode;
+  /** Replaces the default header (home). */
+  header?: ReactNode;
   children: ReactNode;
   /** Pinned above the bottom inset, outside the scroll area. */
   footer?: ReactNode;
@@ -37,51 +73,70 @@ export function Screen({
   // Screens below the top of the stack stay mounted (and in the DOM on web), so only the visible one carries the
   // shared `btn-back` test id: exactly one match at any time.
   const focused = useIsFocused();
-  const column = {
-    width: '100%',
-    maxWidth: contentMaxWidth,
-    alignSelf: 'center',
-  } as const;
+  const column = { width: '100%', maxWidth: contentMaxWidth, alignSelf: 'center' } as const;
 
-  // The header scrolls away with the content: on a small phone a pinned back button, title and subtitle would
-  // take a quarter of the screen. The system back gesture and button always work, and the footer stays pinned.
-  const header = (
-    <View style={[column, { gap: spacing.xs, paddingTop: spacing.md, paddingBottom: spacing.sm }]}>
-      {onBack ? <BackButton onPress={onBack} testID={focused ? 'btn-back' : undefined} /> : null}
-      <AppText variant="title" role="heading" aria-level={1} testID={`${testID}-title`}>
-        {title}
-      </AppText>
-      {subtitle ? (
-        <AppText variant="body" color={colors.textMuted}>
-          {subtitle}
-        </AppText>
+  const defaultHeader = (
+    <View style={{ gap: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.md }}>
+      {onBack || action ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          {onBack ? (
+            <RingButton
+              icon="back"
+              label={strings.common.backLabel}
+              onPress={onBack}
+              testID={focused ? 'btn-back' : undefined}
+            />
+          ) : (
+            <View />
+          )}
+          {action ?? null}
+        </View>
       ) : null}
+      {title ? (
+        <View style={{ gap: spacing.xs }}>
+          {eyebrow ? <Legend color={colors.brass}>{eyebrow}</Legend> : null}
+          <AppText variant="title" role="heading" aria-level={1} testID={`${testID}-title`}>
+            {title}
+          </AppText>
+          {subtitle ? (
+            <AppText variant="body" color={colors.textMuted}>
+              {subtitle}
+            </AppText>
+          ) : null}
+        </View>
+      ) : null}
+    </View>
+  );
+
+  const content = (
+    <View style={[column, { gap: spacing.lg }, scroll ? { flexGrow: 1 } : { flex: 1 }]}>
+      <Stagger>{children}</Stagger>
     </View>
   );
 
   const body = scroll ? (
     <ScrollView
-      style={{ flex: 1 }}
+      style={{ flex: 1, minHeight: 0 }}
       contentContainerStyle={{
         flexGrow: 1,
-        paddingHorizontal: spacing.lg,
+        paddingHorizontal: gutter,
         paddingBottom: spacing.xl + (footer ? 0 : insets.bottom),
       }}
       keyboardShouldPersistTaps="handled"
     >
-      {header}
-      <View style={[column, { gap: spacing.lg, flexGrow: 1 }]}>{children}</View>
+      <View style={column}>{header ?? defaultHeader}</View>
+      {content}
     </ScrollView>
   ) : (
     <View
       style={{
         flex: 1,
-        paddingHorizontal: spacing.lg,
+        paddingHorizontal: gutter,
         paddingBottom: footer ? 0 : insets.bottom + spacing.lg,
       }}
     >
-      {header}
-      <View style={[column, { flex: 1, gap: spacing.lg }]}>{children}</View>
+      <View style={column}>{header ?? defaultHeader}</View>
+      {content}
     </View>
   );
 
@@ -96,49 +151,23 @@ export function Screen({
         paddingRight: insets.right,
       }}
     >
+      <RadialLift />
       {body}
       {footer ? (
         <View
           style={{
-            paddingHorizontal: spacing.lg,
+            paddingHorizontal: gutter,
             paddingTop: spacing.md,
             paddingBottom: spacing.md + insets.bottom,
-            borderTopWidth: borderWidth.thin,
-            borderTopColor: colors.border,
+            borderTopWidth: StyleSheet.hairlineWidth * 2,
+            borderTopColor: colors.hairline,
             backgroundColor: colors.bg,
+            flexShrink: 0,
           }}
         >
           <View style={[column, { gap: spacing.md }]}>{footer}</View>
         </View>
       ) : null}
     </View>
-  );
-}
-
-function BackButton({ onPress, testID }: { onPress: () => void; testID?: string }) {
-  return (
-    <Pressable
-      testID={testID}
-      role="button"
-      aria-label={strings.common.backLabel}
-      onPress={onPress}
-      style={({ pressed }) => ({
-        alignSelf: 'flex-start',
-        minHeight: hit.min,
-        minWidth: hit.min,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.sm,
-        paddingHorizontal: spacing.md,
-        marginLeft: -spacing.md,
-        borderRadius: radius.md,
-        opacity: pressed ? 0.7 : 1,
-      })}
-    >
-      <Icon name="back" size={28} />
-      <AppText variant="bodyLarge" style={{ fontWeight: '600' }}>
-        {strings.common.back}
-      </AppText>
-    </Pressable>
   );
 }

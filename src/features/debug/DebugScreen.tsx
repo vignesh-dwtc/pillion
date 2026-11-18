@@ -1,6 +1,7 @@
 import { View } from 'react-native';
 
-import { useAppStore } from '../../app/hooks';
+import { useAppStore, useRidePreview } from '../../app/hooks';
+import { RIDE_PREVIEWS } from '../../app/preview';
 import { useBack } from '../../app/navigationHooks';
 import { formatKbps } from '../../app/format';
 import { SCREEN_TEST_IDS } from '../../app/routes';
@@ -52,6 +53,8 @@ export function DebugScreen() {
   const allowNoHeadset = useAppStore((s) => s.allowNoHeadset);
   const setAllowNoHeadset = useAppStore((s) => s.setAllowNoHeadset);
 
+  const [preview, setPreview] = useRidePreview();
+  const overridesActive = developerMode && allowNoHeadset;
   const changed = changedTunables(tunables);
   const bitrate = tunables.opusBitrateBps;
   const { min, max } = AUDIO_TUNABLE_LIMITS.opusBitrateBps;
@@ -70,10 +73,16 @@ export function DebugScreen() {
   return (
     <Screen
       testID={SCREEN_TEST_IDS.Debug}
+      eyebrow={strings.debug.eyebrow}
       title={strings.debug.title}
       subtitle={strings.debug.intro}
       onBack={back}
     >
+      {overridesActive ? (
+        <Banner testID="banner-overrides-active" tone="danger">
+          {strings.debug.overridesActive}
+        </Banner>
+      ) : null}
       <View aria-live="polite" role="status">
         <StatusPill
           tone={developerMode ? 'success' : 'warning'}
@@ -83,8 +92,8 @@ export function DebugScreen() {
       </View>
 
       <Card testID="card-tunables">
-        <SectionHeading>{strings.debug.tunablesHeading}</SectionHeading>
-        <AppText variant="label" color={colors.textMuted} testID="text-changed-tunables">
+        <SectionHeading icon="pulse">{strings.debug.tunablesHeading}</SectionHeading>
+        <AppText variant="caption" color={colors.textMuted} testID="text-changed-tunables">
           {changed.length === 0
             ? strings.debug.allDefaults
             : `${strings.debug.changed}: ${changed.map((key) => TUNABLE_COPY[key].label).join(', ')}`}
@@ -136,8 +145,25 @@ export function DebugScreen() {
         />
       </Card>
 
+      <Card testID="card-preview">
+        <SectionHeading icon="motorcycle">{strings.debug.previewHeading}</SectionHeading>
+        <ChoiceRow
+          testID="choice-ride-preview"
+          label={strings.debug.previewHint}
+          choices={RIDE_PREVIEWS.map((value) => ({
+            value,
+            label: strings.debug.previewStates[value],
+            testID: `choice-preview-${value}`,
+          }))}
+          value={preview}
+          onChange={setPreview}
+        />
+      </Card>
+
       <Card testID="card-overrides">
-        <SectionHeading>{strings.debug.overridesHeading}</SectionHeading>
+        <SectionHeading icon="wrench" color={colors.vermilion}>
+          {strings.debug.overridesHeading}
+        </SectionHeading>
         {developerMode ? null : (
           <Banner testID="banner-overrides-locked">{strings.debug.overridesLocked}</Banner>
         )}

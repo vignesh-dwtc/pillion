@@ -1,13 +1,13 @@
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
-import { borderWidth, colors, hit, radius, spacing } from '../../app/theme';
+import { colors, hit, spacing } from '../../app/theme';
 
 import { AppText } from './AppText';
-import { Icon } from './Icon';
+import { Plate } from './Plate';
 
 /**
- * Number adjuster with two big buttons instead of a slider: no drag precision needed with gloves. The value is a
- * live region so a screen reader announces each change.
+ * Number adjuster with two 56 dp brass minus/plus plates instead of a slider (no drag precision with gloves). The
+ * tabular value is a live region so a screen reader announces each change.
  */
 export function Stepper({
   label,
@@ -34,89 +34,60 @@ export function Stepper({
 }) {
   return (
     <View testID={testID} style={{ gap: spacing.sm }}>
-      <AppText variant="bodyLarge" style={{ fontWeight: '700' }}>
-        {label}
-      </AppText>
+      <AppText variant="bodyLarge">{label}</AppText>
       {hint ? (
-        <AppText variant="label" color={colors.textMuted}>
+        <AppText variant="caption" color={colors.textSubtle}>
           {hint}
         </AppText>
       ) : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-        <StepButton
-          icon="minus"
-          label={decrementLabel}
-          disabled={decrementDisabled}
-          onPress={onDecrement}
-          testID={testID ? `${testID}-down` : undefined}
-        />
+        <View style={{ width: hit.control + 8 }}>
+          <Plate
+            testID={testID ? `${testID}-down` : undefined}
+            label=""
+            icon="minus"
+            size="control"
+            variant="brass"
+            layout="stack"
+            accessibilityLabel={decrementLabel}
+            disabled={decrementDisabled}
+            onPress={onDecrement}
+          />
+        </View>
         <View
           style={{
             flex: 1,
             minHeight: hit.control,
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: radius.md,
-            borderWidth: borderWidth.regular,
-            borderColor: colors.border,
-            backgroundColor: colors.bg,
+            borderTopWidth: 1,
+            borderBottomWidth: 1,
+            borderColor: colors.hairline,
           }}
         >
           <AppText
-            variant="heading"
+            variant="value"
             aria-live="polite"
             testID={testID ? `${testID}-value` : undefined}
-            style={{ fontVariant: ['tabular-nums'] }}
+            style={{ fontSize: 19, lineHeight: 24 }}
           >
             {valueText}
           </AppText>
         </View>
-        <StepButton
-          icon="plus"
-          label={incrementLabel}
-          disabled={incrementDisabled}
-          onPress={onIncrement}
-          testID={testID ? `${testID}-up` : undefined}
-        />
+        <View style={{ width: hit.control + 8 }}>
+          <Plate
+            testID={testID ? `${testID}-up` : undefined}
+            label=""
+            icon="plus"
+            size="control"
+            variant="brass"
+            layout="stack"
+            accessibilityLabel={incrementLabel}
+            disabled={incrementDisabled}
+            onPress={onIncrement}
+          />
+        </View>
       </View>
     </View>
-  );
-}
-
-function StepButton({
-  icon,
-  label,
-  disabled,
-  onPress,
-  testID,
-}: {
-  icon: 'minus' | 'plus';
-  label: string;
-  disabled: boolean;
-  onPress: () => void;
-  testID?: string;
-}) {
-  return (
-    <Pressable
-      testID={testID}
-      role="button"
-      aria-label={label}
-      aria-disabled={disabled || undefined}
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => ({
-        width: hit.control,
-        height: hit.control,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: radius.md,
-        borderWidth: borderWidth.regular,
-        borderColor: colors.border,
-        backgroundColor: colors.surfaceRaised,
-        opacity: disabled ? 0.4 : pressed ? 0.75 : 1,
-      })}
-    >
-      <Icon name={icon} size={30} color={colors.text} strokeWidth={3} />
-    </Pressable>
   );
 }

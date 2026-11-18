@@ -15,7 +15,7 @@ export const PERMISSION_ICONS: Record<PermissionKey, IconName> = {
   microphone: 'mic',
   notifications: 'bell',
   bluetooth: 'bluetooth',
-  nearbyDevices: 'wifi',
+  nearbyDevices: 'wifi-direct',
 };
 
 export interface PermissionStatusView {
@@ -33,9 +33,9 @@ export function describePermissionState(state: PermissionState): PermissionStatu
     case 'granted':
       return { label, tone: 'success', icon: 'check', action: null };
     case 'denied':
-      return { label, tone: 'warning', icon: 'alert', action: 'allow' };
+      return { label, tone: 'warning', icon: 'warning-triangle', action: 'allow' };
     case 'blocked':
-      return { label, tone: 'danger', icon: 'close', action: 'open-settings' };
+      return { label, tone: 'danger', icon: 'cross', action: 'open-settings' };
     case 'undetermined':
       return { label, tone: 'info', icon: 'info', action: 'allow' };
     case 'unavailable':

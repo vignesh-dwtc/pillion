@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
 
 import type { DiagnosticsReportInput } from '../core/diagnostics/types';
@@ -5,7 +6,8 @@ import type { SessionSnapshot } from '../core/session/types';
 import type { AudioRouteState } from '../platform/audio/AudioRoute';
 
 import { appStore } from './composition';
-import { SAMPLE_AUDIO, SAMPLE_DIAGNOSTICS, SAMPLE_SESSION } from './placeholders';
+import { SAMPLE_AUDIO, SAMPLE_DIAGNOSTICS, SAMPLE_NOW } from './placeholders';
+import { previewStore, sampleSessionFor, type RidePreview } from './preview';
 import type { AppState } from './store';
 
 /** Selects from the app store. Select primitives or stable references: a selector that builds a new object re-renders on every change. */
@@ -18,7 +20,28 @@ export function useAppStore<T>(selector: (state: AppState) => T): T {
  * subscribes to the `SessionController` from the composition root, and nothing in the screens changes.
  */
 export function useSessionSnapshot(): SessionSnapshot {
-  return SAMPLE_SESSION;
+  const preview = useStore(previewStore, (s) => s.preview);
+  return sampleSessionFor(preview);
+}
+
+/** M0 PLACEHOLDER: the sample session variant shown on the ride screen (debug screen chooser). */
+export function useRidePreview(): [RidePreview, (preview: RidePreview) => void] {
+  return [useStore(previewStore, (s) => s.preview), previewStore.getState().setPreview];
+}
+
+/**
+ * Clock for the ride timer, ticking once per second (a text change, not an animation). M0: the sample clock
+ * (SAMPLE_NOW) advanced by the time since mount, so the sample ride time is realistic; M1: Date.now().
+ */
+export function useRideClock(active: boolean): number {
+  const [mountedAt] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!active) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [active]);
+  return SAMPLE_NOW + (now - mountedAt);
 }
 
 /** M0 PLACEHOLDER: static sample audio route; M1 subscribes to `AudioRoute.onChange`. */

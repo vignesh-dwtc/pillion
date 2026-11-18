@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import { TextInput, View } from 'react-native';
 
-import { borderWidth, colors, hit, radius, spacing, type as typeScale } from '../../app/theme';
+import { colors, hit, spacing, type as typeScale } from '../../app/theme';
 
 import { AppText } from './AppText';
 
-/** Labelled single- or multi-line input with a 64 dp+ field, a visible label and no auto-correct surprises. */
+/**
+ * Engraved text field: a label, an optional hint and a 56 dp+ input that sits on a hairline (brass when focused),
+ * with no auto-correct surprises.
+ */
 export function TextField({
   label,
   hint,
@@ -30,13 +34,12 @@ export function TextField({
   onSubmitEditing?: () => void;
   autoCapitalize?: 'none' | 'words' | 'sentences';
 }) {
+  const [focused, setFocused] = useState(false);
   return (
-    <View style={{ gap: spacing.sm }}>
-      <AppText variant="bodyLarge" style={{ fontWeight: '700' }}>
-        {label}
-      </AppText>
+    <View style={{ gap: spacing.xs }}>
+      <AppText variant="legend">{label}</AppText>
       {hint ? (
-        <AppText variant="label" color={colors.textMuted}>
+        <AppText variant="caption" color={colors.textSubtle}>
           {hint}
         </AppText>
       ) : null}
@@ -49,7 +52,11 @@ export function TextField({
         placeholderTextColor={colors.textSubtle}
         maxLength={maxLength}
         multiline={multiline}
-        onBlur={onBlur}
+        onFocus={() => setFocused(true)}
+        onBlur={() => {
+          setFocused(false);
+          onBlur?.();
+        }}
         onSubmitEditing={onSubmitEditing}
         returnKeyType={multiline ? 'default' : 'done'}
         autoCapitalize={autoCapitalize}
@@ -57,17 +64,18 @@ export function TextField({
         spellCheck={false}
         autoComplete="off"
         importantForAutofill="no"
-        selectionColor={colors.primary}
+        selectionColor={colors.brass}
+        allowFontScaling
+        maxFontSizeMultiplier={1.6}
         style={[
           typeScale.bodyLarge,
           {
             minHeight: multiline ? hit.control * 2 : hit.control,
             color: colors.text,
-            backgroundColor: colors.bg,
-            borderColor: colors.border,
-            borderWidth: borderWidth.regular,
-            borderRadius: radius.md,
-            paddingHorizontal: spacing.lg,
+            backgroundColor: colors.surface,
+            borderBottomWidth: focused ? 2 : 1,
+            borderColor: focused ? colors.brass : colors.border,
+            paddingHorizontal: spacing.md,
             paddingVertical: spacing.md,
             textAlignVertical: multiline ? 'top' : 'center',
           },

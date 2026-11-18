@@ -1,56 +1,68 @@
-import { Pressable, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { borderWidth, colors, hit, radius, spacing } from '../../app/theme';
+import { colors, hit, spacing } from '../../app/theme';
 
 import { AppText } from './AppText';
 import { Icon, type IconName } from './Icon';
 
-/** A tappable row that leads to another screen: icon, title, optional hint and a chevron. */
+/** 56 dp hairline row that leads to another screen: brass icon, title, optional hint/value and a chevron. */
 export function ListRow({
   title,
   hint,
+  value,
+  valueColor = colors.textMuted,
   icon,
+  iconColor = colors.brass,
   onPress,
   testID,
+  last = false,
 }: {
   title: string;
   hint?: string;
+  value?: string;
+  valueColor?: string;
   icon?: IconName;
+  iconColor?: string;
   onPress: () => void;
   testID?: string;
+  /** Draws the closing hairline under the row. */
+  last?: boolean;
 }) {
+  const spoken = [title, value, hint].filter(Boolean).join('. ');
   return (
     <Pressable
       testID={testID}
       role="button"
-      aria-label={hint ? `${title}. ${hint}` : title}
+      aria-label={spoken}
       onPress={onPress}
       style={({ pressed }) => ({
-        minHeight: hit.large,
+        minHeight: hit.row,
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.md,
-        paddingHorizontal: spacing.lg,
-        paddingVertical: spacing.md,
-        backgroundColor: colors.surfaceRaised,
-        borderColor: colors.border,
-        borderWidth: borderWidth.regular,
-        borderRadius: radius.md,
-        opacity: pressed ? 0.8 : 1,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.xs,
+        borderTopWidth: StyleSheet.hairlineWidth * 2,
+        borderBottomWidth: last ? StyleSheet.hairlineWidth * 2 : 0,
+        borderColor: colors.hairline,
+        backgroundColor: pressed ? colors.surfaceRaised : 'transparent',
       })}
     >
-      {icon ? <Icon name={icon} size={28} color={colors.text} /> : null}
-      <View style={{ flex: 1 }}>
-        <AppText variant="bodyLarge" style={{ fontWeight: '700' }}>
-          {title}
-        </AppText>
+      {icon ? <Icon name={icon} size={20} color={iconColor} /> : null}
+      <View style={{ flex: 1, gap: 1 }}>
+        <AppText variant="bodyLarge">{title}</AppText>
         {hint ? (
-          <AppText variant="label" color={colors.textMuted}>
+          <AppText variant="caption" color={colors.textSubtle}>
             {hint}
           </AppText>
         ) : null}
       </View>
-      <Icon name="chevron" size={26} color={colors.textMuted} />
+      {value ? (
+        <AppText variant="value" color={valueColor}>
+          {value}
+        </AppText>
+      ) : null}
+      <Icon name="chevron" size={18} color={colors.textSubtle} />
     </Pressable>
   );
 }

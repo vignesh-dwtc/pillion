@@ -1,6 +1,6 @@
 import { Pressable, View } from 'react-native';
 
-import { borderWidth, colors, hit, radius, spacing } from '../../app/theme';
+import { colors, hit, spacing } from '../../app/theme';
 
 import { AppText } from './AppText';
 import { Icon } from './Icon';
@@ -14,8 +14,8 @@ export interface Choice<T extends string | number> {
 }
 
 /**
- * One-of-N selector made of big buttons. The selected one is marked by a check mark, a thick white border and a
- * lighter fill, not by colour alone.
+ * One-of-N selector of 56 dp cells. The selected cell has a brass frame, a raised fill and a check mark: never
+ * colour alone.
  */
 export function ChoiceRow<T extends string | number>({
   label,
@@ -34,11 +34,9 @@ export function ChoiceRow<T extends string | number>({
 }) {
   return (
     <View testID={testID} role="radiogroup" aria-label={label} style={{ gap: spacing.sm }}>
-      <AppText variant="bodyLarge" style={{ fontWeight: '700' }}>
-        {label}
-      </AppText>
+      <AppText variant="bodyLarge">{label}</AppText>
       {hint ? (
-        <AppText variant="label" color={colors.textMuted}>
+        <AppText variant="caption" color={colors.textSubtle}>
           {hint}
         </AppText>
       ) : null}
@@ -55,22 +53,20 @@ export function ChoiceRow<T extends string | number>({
               onPress={() => onChange(choice.value)}
               style={({ pressed }) => ({
                 flexGrow: 1,
-                minWidth: hit.min + 24,
-                minHeight: hit.min,
+                minWidth: hit.control + 8,
+                minHeight: hit.control,
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: spacing.xs,
                 paddingHorizontal: spacing.md,
-                borderRadius: radius.md,
-                borderWidth: selected ? borderWidth.thick : borderWidth.regular,
-                borderColor: selected ? colors.focus : colors.border,
-                backgroundColor: selected ? colors.surfaceSelected : colors.surfaceRaised,
-                opacity: pressed ? 0.8 : 1,
+                borderWidth: selected ? 1.5 : 1,
+                borderColor: selected ? colors.brass : colors.border,
+                backgroundColor: selected || pressed ? colors.surfaceRaised : 'transparent',
               })}
             >
-              {selected ? <Icon name="check" size={20} color={colors.focus} strokeWidth={3} /> : null}
-              <AppText variant="bodyLarge" style={{ fontWeight: selected ? '800' : '500' }}>
+              {selected ? <Icon name="check" size={16} color={colors.brass} strokeWidth={2} /> : null}
+              <AppText variant="value" color={selected ? colors.brass : colors.text}>
                 {choice.label}
               </AppText>
             </Pressable>
