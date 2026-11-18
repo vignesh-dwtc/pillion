@@ -37,12 +37,12 @@ export const navigationTheme: Theme = {
   dark: true,
   colors: {
     ...DarkTheme.colors,
-    primary: colors.primary,
+    primary: colors.brass,
     background: colors.bg,
     card: colors.surface,
     text: colors.text,
     border: colors.border,
-    notification: colors.danger,
+    notification: colors.vermilion,
   },
 };
 

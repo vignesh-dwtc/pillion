@@ -19,11 +19,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'dark',
-  backgroundColor: '#000000',
+  backgroundColor: '#0B0A08',
   android: {
     package: IDENTITY.androidApplicationId,
     adaptiveIcon: {
-      backgroundColor: '#000000',
+      backgroundColor: '#0B0A08',
       foregroundImage: './assets/android-icon-foreground.png',
       backgroundImage: './assets/android-icon-background.png',
       monochromeImage: './assets/android-icon-monochrome.png',

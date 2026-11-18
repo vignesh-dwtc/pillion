@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react';
-import { View, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { borderWidth, colors, radius, spacing, toneColor, type Tone } from '../../app/theme';
+import { colors, spacing, toneColor, type Tone } from '../../app/theme';
 
-import { AppText } from './AppText';
+import { AppText, Legend } from './AppText';
 import { Icon, type IconName } from './Icon';
+import { Rule } from './Rule';
 
+/** A group of content: no box, just spacing (hairline-ruled lists replace boxed cards). */
 export function Card({
   children,
   style,
@@ -16,48 +18,47 @@ export function Card({
   testID?: string;
 }) {
   return (
-    <View
-      testID={testID}
-      style={[
-        {
-          backgroundColor: colors.surface,
-          borderRadius: radius.lg,
-          borderWidth: borderWidth.thin,
-          borderColor: colors.border,
-          padding: spacing.lg,
-          gap: spacing.md,
-        },
-        style,
-      ]}
-    >
+    <View testID={testID} style={[{ gap: spacing.md }, style]}>
       {children}
     </View>
   );
 }
 
-export function SectionHeading({ children, testID }: { children: string; testID?: string }) {
+/** Section legend: engraved Marcellus SC with a hairline running to the edge. */
+export function SectionHeading({
+  children,
+  testID,
+  icon,
+  color = colors.textSubtle,
+}: {
+  children: string;
+  testID?: string;
+  icon?: IconName;
+  color?: string;
+}) {
   return (
-    <AppText
-      variant="heading"
-      role="heading"
-      aria-level={2}
+    <View
+      style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md }}
       testID={testID}
-      style={{ marginTop: spacing.sm }}
     >
-      {children}
-    </AppText>
+      {icon ? <Icon name={icon} size={16} color={color} /> : null}
+      <Legend color={color} style={{ flexShrink: 1 }}>
+        {children}
+      </Legend>
+      <Rule style={{ flex: 1 }} />
+    </View>
   );
 }
 
-const TONE_ICON: Record<Tone, IconName> = {
+export const TONE_ICON: Record<Tone, IconName> = {
   neutral: 'info',
   success: 'check',
-  warning: 'alert',
-  danger: 'close',
+  warning: 'warning-triangle',
+  danger: 'cross',
   info: 'info',
 };
 
-/** Status chip: icon + text + border, so the state never relies on colour alone. */
+/** Status: a tone ring with an icon, and the word. Never colour alone. */
 export function StatusPill({
   tone,
   label,
@@ -73,28 +74,39 @@ export function StatusPill({
   return (
     <View
       testID={testID}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        alignSelf: 'flex-start',
-        gap: spacing.sm,
-        borderColor: color,
-        borderWidth: borderWidth.regular,
-        borderRadius: radius.pill,
-        paddingVertical: spacing.sm,
-        paddingHorizontal: spacing.md,
-      }}
+      style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: spacing.sm }}
     >
-      <Icon name={icon ?? TONE_ICON[tone]} size={20} color={color} />
-      <AppText variant="label" color={color} style={{ flexShrink: 1 }}>
+      <View
+        style={{
+          width: 26,
+          height: 26,
+          borderRadius: 13,
+          borderWidth: 1,
+          borderColor: color,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Icon name={icon ?? TONE_ICON[tone]} size={14} color={color} strokeWidth={1.8} />
+      </View>
+      <AppText variant="bodyLarge" color={color} style={{ flexShrink: 1 }}>
         {label}
       </AppText>
     </View>
   );
 }
 
-/** Dashed box that marks placeholder content: not a real result, never mistaken for live data. */
-export function Banner({ children, testID }: { children: string; testID?: string }) {
+/** A note framed by hairlines with a tone icon: placeholder notices and warnings. */
+export function Banner({
+  children,
+  testID,
+  tone = 'warning',
+}: {
+  children: string;
+  testID?: string;
+  tone?: Tone;
+}) {
+  const color = toneColor[tone];
   return (
     <View
       testID={testID}
@@ -103,15 +115,19 @@ export function Banner({ children, testID }: { children: string; testID?: string
         flexDirection: 'row',
         gap: spacing.md,
         alignItems: 'flex-start',
-        borderWidth: borderWidth.regular,
-        borderStyle: 'dashed',
-        borderColor: colors.warning,
-        borderRadius: radius.md,
-        padding: spacing.md,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.md,
+        borderLeftWidth: 2,
+        borderLeftColor: color,
+        borderTopWidth: StyleSheet.hairlineWidth * 2,
+        borderBottomWidth: StyleSheet.hairlineWidth * 2,
+        borderTopColor: colors.hairline,
+        borderBottomColor: colors.hairline,
+        backgroundColor: colors.surface,
       }}
     >
-      <Icon name="info" size={24} color={colors.warning} />
-      <AppText variant="label" color={colors.text} style={{ flex: 1 }}>
+      <Icon name={TONE_ICON[tone]} size={18} color={color} />
+      <AppText variant="body" color={colors.textMuted} style={{ flex: 1 }}>
         {children}
       </AppText>
     </View>
@@ -119,5 +135,5 @@ export function Banner({ children, testID }: { children: string; testID?: string
 }
 
 export function Divider() {
-  return <View style={{ height: borderWidth.thin, backgroundColor: colors.border, opacity: 0.6 }} />;
+  return <Rule />;
 }

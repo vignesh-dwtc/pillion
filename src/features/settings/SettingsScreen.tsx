@@ -1,21 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 import { useAppStore } from '../../app/hooks';
 import { useAppNavigation, useBack } from '../../app/navigationHooks';
 import { DEVICE_NAME_MAX_LENGTH, sanitizeDeviceName } from '../../app/persistence';
 import { SCREEN_TEST_IDS } from '../../app/routes';
 import { strings } from '../../app/strings';
-import { createTapCounter } from '../../app/tapCounter';
-import { colors, hit, spacing } from '../../app/theme';
-import { APP_VERSION } from '../../app/version';
+import { colors, spacing } from '../../app/theme';
 import { AppText } from '../components/AppText';
 import { Button } from '../components/Button';
-import { Card, Divider, SectionHeading } from '../components/Card';
+import { SectionHeading } from '../components/Card';
+import { formatSince } from '../home/dialModel';
 import { ListRow } from '../components/ListRow';
+import { RotarySwitch } from '../components/RotarySwitch';
+import { Rule } from '../components/Rule';
 import { Screen } from '../components/Screen';
 import { TextField } from '../components/TextField';
-import { ToggleRow } from '../components/ToggleRow';
+import { VersionLabel } from '../components/VersionLabel';
 
 /** How long the "tap again to forget" confirmation stays armed. */
 const CONFIRM_MS = 4000;
@@ -55,9 +56,14 @@ export function SettingsScreen() {
   };
 
   return (
-    <Screen testID={SCREEN_TEST_IDS.Settings} title={strings.settings.title} onBack={back}>
-      <Card>
-        <SectionHeading>{strings.settings.deviceHeading}</SectionHeading>
+    <Screen
+      testID={SCREEN_TEST_IDS.Settings}
+      eyebrow={strings.settings.eyebrow}
+      title={strings.settings.title}
+      onBack={back}
+    >
+      <View style={{ gap: spacing.md }}>
+        <SectionHeading icon="phone">{strings.settings.deviceHeading}</SectionHeading>
         <TextField
           testID="input-device-name"
           label={strings.settings.deviceNameLabel}
@@ -72,45 +78,50 @@ export function SettingsScreen() {
           }}
           onBlur={() => setDraftName(sanitizeDeviceName(draftName, strings.settings.defaultDeviceName))}
         />
-      </Card>
+      </View>
 
-      <Card>
-        <SectionHeading>{strings.settings.setupHeading}</SectionHeading>
-        <ListRow
-          testID="btn-permissions"
-          icon="bell"
-          title={strings.settings.permissions}
-          hint={strings.settings.permissionsHint}
-          onPress={() => navigation.navigate('Onboarding')}
-        />
-        <ListRow
-          testID="btn-settings-diagnostics"
-          icon="pulse"
-          title={strings.settings.diagnostics}
-          hint={strings.settings.diagnosticsHint}
-          onPress={() => navigation.navigate('Diagnostics')}
-        />
-      </Card>
+      <View style={{ gap: spacing.sm }}>
+        <SectionHeading icon="wrench">{strings.settings.setupHeading}</SectionHeading>
+        <View>
+          <ListRow
+            testID="btn-permissions"
+            icon="shield-check"
+            title={strings.settings.permissions}
+            hint={strings.settings.permissionsHint}
+            onPress={() => navigation.navigate('Onboarding')}
+          />
+          <ListRow
+            testID="btn-settings-diagnostics"
+            icon="pulse"
+            title={strings.settings.diagnostics}
+            hint={strings.settings.diagnosticsHint}
+            onPress={() => navigation.navigate('Diagnostics')}
+            last
+          />
+        </View>
+      </View>
 
-      <Card testID="card-partners">
-        <SectionHeading>{strings.settings.partnerHeading}</SectionHeading>
+      <View testID="card-partners" style={{ gap: spacing.sm }}>
+        <SectionHeading icon="link">{strings.settings.partnerHeading}</SectionHeading>
         {pairings.length === 0 ? (
           <AppText variant="body" color={colors.textMuted}>
             {strings.settings.noPartner}
           </AppText>
         ) : (
-          pairings.map((pairing, index) => {
+          pairings.map((pairing) => {
             const name = pairing.partnerName ?? strings.home.partnerFallback;
             const armed = armedPairId === pairing.pairId;
             return (
               <View key={pairing.pairId} style={{ gap: spacing.md }}>
-                {index > 0 ? <Divider /> : null}
-                <AppText variant="bodyLarge" style={{ fontWeight: '700' }}>
-                  {name}
-                </AppText>
-                <AppText variant="label" color={colors.textMuted}>
-                  {pairing.role === 'host' ? strings.home.roleHost : strings.home.roleGuest}
-                </AppText>
+                <Rule />
+                <View style={{ gap: 2 }}>
+                  <AppText variant="partnerScriptRow" color={colors.brassLight}>
+                    {name}
+                  </AppText>
+                  <AppText variant="caption" color={colors.textSubtle}>
+                    {`${pairing.role === 'host' ? strings.home.roleHost : strings.home.roleGuest} · ${strings.home.dialSince(formatSince(pairing.createdAt))}`}
+                  </AppText>
+                </View>
                 <Button
                   testID={`btn-forget-${pairing.pairId}`}
                   label={armed ? strings.settings.forgetConfirm : strings.settings.forget}
@@ -118,72 +129,31 @@ export function SettingsScreen() {
                     armed ? strings.settings.forgetConfirm : strings.settings.forgetLabel(name)
                   }
                   variant={armed ? 'danger' : 'secondary'}
-                  icon="close"
+                  icon="cross"
                   onPress={() => onForget(pairing.pairId)}
                 />
               </View>
             );
           })
         )}
-      </Card>
+      </View>
 
-      <Card>
-        <SectionHeading>{strings.settings.advancedHeading}</SectionHeading>
-        <ToggleRow
-          testID="toggle-developer-mode"
-          label={strings.settings.developerMode}
-          hint={strings.settings.developerModeHint}
-          value={developerMode}
-          onValueChange={setDeveloperMode}
-        />
-      </Card>
+      <View style={{ gap: spacing.sm }}>
+        <SectionHeading icon="gear">{strings.settings.advancedHeading}</SectionHeading>
+        <View>
+          <Rule />
+          <RotarySwitch
+            testID="toggle-developer-mode"
+            label={strings.settings.developerMode}
+            hint={strings.settings.developerModeHint}
+            value={developerMode}
+            onValueChange={setDeveloperMode}
+          />
+          <Rule />
+        </View>
+      </View>
 
       <VersionLabel onOpenDebug={() => navigation.navigate('Debug')} />
     </Screen>
-  );
-}
-
-/** Version text. Seven quick taps switch developer mode on and open the hidden debug screen. */
-function VersionLabel({ onOpenDebug }: { onOpenDebug: () => void }) {
-  const setDeveloperMode = useAppStore((s) => s.setDeveloperMode);
-  const [counter] = useState(() => createTapCounter());
-  const [hint, setHint] = useState<string | null>(null);
-
-  const onPress = () => {
-    const result = counter.tap();
-    if (result.triggered) {
-      setDeveloperMode(true);
-      setHint(strings.settings.developerModeEnabled);
-      AccessibilityInfo.announceForAccessibility(strings.settings.developerModeEnabled);
-      onOpenDebug();
-      return;
-    }
-    // Stay silent for the first taps so the entry stays hidden from ordinary use.
-    setHint(result.count >= 3 ? strings.settings.developerTapsRemaining(result.remaining) : null);
-  };
-
-  return (
-    <View style={{ alignItems: 'center', paddingTop: spacing.md }}>
-      <Pressable
-        testID="label-version"
-        role="button"
-        aria-label={strings.settings.versionLabel(APP_VERSION)}
-        onPress={onPress}
-        style={{
-          minHeight: hit.min,
-          minWidth: hit.min,
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingHorizontal: spacing.xl,
-        }}
-      >
-        <AppText variant="label" color={colors.textMuted}>
-          {strings.settings.versionLabel(APP_VERSION)}
-        </AppText>
-      </Pressable>
-      <AppText variant="label" color={colors.textMuted} aria-live="polite" testID="text-developer-hint">
-        {hint ?? ' '}
-      </AppText>
-    </View>
   );
 }

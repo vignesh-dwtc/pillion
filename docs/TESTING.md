@@ -33,6 +33,17 @@ Filled in per milestone (M1 first). Each item says exactly what to do and what t
 
 _Placeholder. The M1 checklist, the APK location and the paste-back template are added when M1 is built._
 
+### UI redesign (Brass Chronograph) - on the phone, any milestone build
+
+Compiles, web-verified and unit-tested; untested on device. On a Pixel-class Android phone:
+
+1. Cold start: the splash shows the wordmark, then Home renders in Marcellus / Barlow (not Roboto). Airplane mode on: fonts still load (bundled).
+2. Settings > Accessibility > Font size largest (about 1.3): Home, Ride, Pair host and Settings have no clipped or overlapping text; the ride plates keep both lines of their sub-label.
+3. Settings > Accessibility > Remove animations on: the dial ticks, gauge sweep and screen entrances do not animate; values appear at once.
+4. Haptics: Begin ride and Mute give a light tick; holding End ride gives a tick at the start and a stronger one when it completes after about 1 s; releasing early cancels.
+5. TalkBack: End ride announces the hold hint; double-tap once says "Activate again to end the ride", a second double-tap ends it.
+6. Night check outdoors: status words (Linked / Reconnecting / Muted) readable at arm's length in sunlight.
+
 ## 4. Pasting results into the next session
 
 Use the diagnostics screen's "Share diagnostics" action on both phones after each test and paste the text. Add: phone models and Android versions, headset models, Wi-Fi router/hotspot used, what you heard (one-way, echo, dropouts, wind noise), and the time of any failure. The export never contains the pairing secret or the Wi-Fi passphrase.
