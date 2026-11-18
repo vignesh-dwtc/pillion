@@ -19,6 +19,11 @@
  * - When one peer leaves, the other is closed with 4410 and the room disappears: each side calls open() again, exactly
  *   like a real transport after a dropped link, and the host registers before the guest finds it.
  * - Listens on 127.0.0.1 only and rejects browser origins that are not localhost.
+ * - NOT AN AUTHENTICATED SERVICE. Room membership is first come, first served: anyone who can reach the port and
+ *   knows (or guesses) a pair id can take the host or guest seat, and the relay cannot tell. That is acceptable only
+ *   here, on loopback, because the secure-channel handshake proof (src/core/protocol) defeats impersonation and the
+ *   relay never sees the secret. Do not reuse this file as a signaling or relay server on any reachable network:
+ *   a real one needs authenticated rooms, TLS and rate limits (Stage 2, M5).
  *
  * Output: one startup line. Set RELAY_VERBOSE=1 for join/leave lines (first 6 characters of the room id only).
  */
