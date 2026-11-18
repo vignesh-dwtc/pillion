@@ -14,7 +14,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: IDENTITY.displayName,
   slug: IDENTITY.slug,
-  scheme: IDENTITY.urlScheme,
+  // No `scheme`: a registered BROWSABLE `<urlScheme>://` filter would let any web page launch the app into any screen,
+  // and nothing on Android needs it yet (pairing scans the QR in-app). See docs/DECISIONS.md D-045.
   version: '0.1.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
@@ -29,6 +30,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       monochromeImage: './assets/android-icon-monochrome.png',
     },
     predictiveBackGestureEnabled: false,
+    // Least privilege (docs/DECISIONS.md D-045). Removed from the merged manifest of every variant: storage access
+    // (expo-file-system/expo-camera defaults; nothing reads or writes shared storage, and no audio is ever stored) and
+    // the RN dev-menu overlay. The debug-only android/app/src/debug manifest may still add SYSTEM_ALERT_WINDOW.
+    blockedPermissions: [
+      'android.permission.SYSTEM_ALERT_WINDOW',
+      'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.WRITE_EXTERNAL_STORAGE',
+    ],
+    // No Auto Backup to the cloud: pairing records must not leave the phone. expo-secure-store's data extraction rules
+    // stay in place for device-to-device transfer (which allowBackup=false does not disable on Android 12+).
+    allowBackup: false,
   },
   web: { bundler: 'metro', output: 'single', favicon: './assets/favicon.png' },
   plugins: [
