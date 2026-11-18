@@ -9,13 +9,14 @@ The brief (`docs/BRIEF.md`) defines the milestones; this file tracks status. Upd
 ### M0 Foundation - STATUS: done pending review fixes and a green GitHub Actions run (started 2026-11-16)
 
 - [x] Brief saved unchanged as `docs/BRIEF.md`.
-- [x] Android SDK installed; Kotlin compile gate passes on Expo SDK 58 / RN 0.88.1 with the LiveKit WebRTC fork (DECISIONS E-3). M1 is allowed to proceed.
+- [x] Android SDK installed; the app (Kotlin modules still M0 stubs) compiles and assembles in the cloud session on Expo SDK 58 / RN 0.88.1 with the LiveKit WebRTC fork (DECISIONS E-3). Nothing exercises the WebRTC fork or the interop layer at runtime yet.
+- [ ] M1 go-ahead: tick only after the first green `android` job of the GitHub Actions CI run (assemble + Kotlin unit tests on a clean runner).
 - [x] WebRTC package and React Native version chosen and recorded with evidence (DECISIONS D-002, D-004, E-1..E-4).
 - [x] Scaffold: strict TypeScript, ESLint with architecture rules, Prettier, Jest (Node), Playwright config skeleton, identity in one file.
 - [x] Shared contracts committed (see CLAUDE.md "Contracts") and subagent definitions in `.claude/agents/`.
-- [x] `core/` implemented with tests: protocol, pairing payload, session state machine, reconnect policy, two-peer simulation (56 Jest suites, 1068 tests; real-protocol two-peer test included).
+- [x] `core/` implemented with tests: protocol, pairing payload, session state machine, reconnect policy, two-peer simulation (real-protocol two-peer test included). Current counts: `npm test` prints the suite and test totals.
 - [x] App shell: navigation, placeholder screens, dark high-contrast theme with large touch targets (8 routes; screenshots in e2e/.artifacts/screens, viewed by ui, web-verify and the ui-web reviewer).
-- [x] Web build runs; `npm run e2e` passes 13/13 (smoke of every route + two-peer WebRTC with audio bytes both ways, mute, link drop, recovery).
+- [x] Web build runs; `npm run web:build && npm run e2e` passes (smoke of every route + two-peer WebRTC with audio bytes both ways, mute, link drop, recovery; Playwright prints the count).
 - [x] CI workflow `.github/workflows/ci.yml` written (checks, web-e2e, android); YAML-parsed and reviewed by hand, NOT yet run on GitHub (actionlint could not be run here). `scripts/cloud-setup.sh` tested against a fresh temp SDK: clean install 24 s, idempotent re-run <1 s, exit 0 (DECISIONS D-029..D-032).
 - [x] Full `assembleDebug` (arm64) verified in the session: BUILD SUCCESSFUL in 2m 13s, 112 MB debug APK (DECISIONS E-3).
 

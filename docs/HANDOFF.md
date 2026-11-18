@@ -4,13 +4,13 @@ Last updated: 2026-11-17. Update this file whenever you stop work, so the next a
 
 ## 1. Where things stand
 
-| Item                      | State                                                                                                                                    |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Milestone M0 (foundation) | Built, integrated, reviewed. Done once CI is green on the final commit and the PR #2 review loop reaches LGTM.                           |
-| Branch / PR               | `claude/m0-foundation` -> PR #2 into `main` (https://github.com/vignesh-dwtc/pillion/pull/2).                                            |
-| `main` protection         | PR required (0 approvals), 3 CI checks required and strict, conversation resolution required, no force push/deletion, admins may bypass. |
-| Tests                     | 57 Jest suites / 1090 tests, Playwright 13/13 (web), Android assembleDebug + Kotlin JVM tests (CI job).                                  |
-| Device testing            | Nothing has run on a phone yet except an install of the M0 APK by the owner (see 3).                                                     |
+| Item                      | State                                                                                                                                                      |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Milestone M0 (foundation) | Built, integrated, reviewed. Done once CI is green on the final commit and the PR #2 review loop reaches LGTM.                                             |
+| Branch / PR               | `claude/m0-foundation` -> PR #2 into `main` (https://github.com/vignesh-dwtc/pillion/pull/2).                                                              |
+| `main` protection         | PR required (0 approvals), 3 CI checks required and strict, conversation resolution required, no force push/deletion, admins may bypass.                   |
+| Tests                     | `npm test` (Jest), `npm run e2e` (Playwright, web), `npm run check:bundle`, Android assembleDebug + Kotlin JVM tests (CI job); each prints its own counts. |
+| Device testing            | Nothing has run on a phone yet except an install of the M0 APK by the owner (see 3).                                                                       |
 
 ## 2. In flight when this file was written (may be unfinished)
 
@@ -32,14 +32,13 @@ M1 slice 1, real pairing:
 
 LAN transport (NSD + TCP) in `modules/intercom-native` (Kotlin stubs currently reject with `ERR_NOT_IMPLEMENTED`; `specs/IntercomLink.ts` is the JS surface), `WebRtcMediaEngine` over `@livekit/react-native-webrtc`, `AudioRoute` (communication mode, Bluetooth headset first), minimal foreground `RideService`, composition root wiring `createSessionController`, home/ride screens live, audio cues, diagnostics screen live + share, loopback self-test, two-peer browser test through the real UI. Owner verifies on two phones on one Wi-Fi for 10 minutes, screens off.
 
-## 5. Open review findings (from PR #2 review, not all fixed yet)
+## 5. Open review findings (from PR #2 review)
 
-- Wire `scripts/check-android-bundle.mjs` into an npm script and CI (guards against web-only code in the Android bundle).
-- Remove unused manifest permissions (`SYSTEM_ALERT_WINDOW`, external storage) via `blockedPermissions` in `app.config.ts`; reconsider `allowBackup` and the unused `pillion://` deep-link filter.
-- `src/core/protocol/channel.ts`: backlog overflow at 256 should close the channel with a `ProtocolError` instead of silently dropping (fail closed) + test.
-- CI: do not hide `sdkmanager --licenses` failures; widen the Gradle cache key to `modules/**/*.gradle` and `gradle.properties`; add a prebuild drift check.
-- `IntercomLinkModule.kt`: `isWifiConnected` must not rely on `activeNetwork` (null on Wi-Fi without internet); catch `SocketException` in `listInterfaces`.
-- Docs: stale test counts in `docs/PLAN.md`; record "debug-signed only, never distribute" for the committed debug keystore.
+Fixed in round 1 (see the commit messages): bundle guard wired into npm + CI, manifest least privilege and no backup / deep-link filter (D-045), channel backlog fails closed, CI licence / cache key / prebuild drift check, `isWifiConnected` over all networks and `SocketException` handling (D-046), stale counts and the M1 gate wording in `docs/PLAN.md`, unit-test-only claims in `docs/TESTING.md`, dev-relay header.
+
+Still open:
+
+- Docs: record "debug-signed only, never distribute" for the committed debug keystore.
 - Backlog (minor): bind the protocol version into the handshake proofs; reset backoff only after a stable connection; extend `src/platform/parity.check.ts` to all twins; dev-panel touch targets.
 
 ## 6. Environment notes
