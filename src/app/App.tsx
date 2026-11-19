@@ -1,14 +1,14 @@
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { AppState, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { DevPanel } from '../features/devpanel/DevPanel';
 import { AppText } from '../features/components/AppText';
 import { Ornament } from '../features/components/Rule';
 
-import { appStore } from './composition';
+import { appStore, ringLog } from './composition';
 import { FONT_MAP } from './fonts';
 import { useAppStore } from './hooks';
 import { AppNavigation } from './navigation';
@@ -27,7 +27,14 @@ export default function App() {
   useEffect(() => {
     void appStore.getState().refreshPairings();
     const timer = setTimeout(() => setTimedOut(true), HYDRATION_TIMEOUT_MS);
-    return () => clearTimeout(timer);
+    // The ring log coalesces writes; going to the background is when an unwritten tail could be lost.
+    const appState = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') ringLog.flush();
+    });
+    return () => {
+      clearTimeout(timer);
+      appState.remove();
+    };
   }, []);
 
   const fontsSettled = fontsLoaded || fontError !== null || timedOut;

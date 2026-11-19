@@ -1,8 +1,7 @@
 import { Fragment, type ReactElement } from 'react';
 import { View } from 'react-native';
 
-import { useAppStore, useRidePreview } from '../../app/hooks';
-import { RIDE_PREVIEWS } from '../../app/preview';
+import { useAppStore } from '../../app/hooks';
 import { useBack } from '../../app/navigationHooks';
 import { formatKbps } from '../../app/format';
 import { SCREEN_TEST_IDS } from '../../app/routes';
@@ -27,6 +26,7 @@ import {
   stepBitrate,
   type BooleanTunable,
 } from './tunableFields';
+import { LoopbackCard } from './LoopbackCard';
 
 const PACKET_TIME_CHOICES: Choice<number>[] = AUDIO_TUNABLE_LIMITS.opusPacketTimeMs.map((ms) => ({
   value: ms,
@@ -55,7 +55,6 @@ export function DebugScreen() {
   const allowNoHeadset = useAppStore((s) => s.allowNoHeadset);
   const setAllowNoHeadset = useAppStore((s) => s.setAllowNoHeadset);
 
-  const [preview, setPreview] = useRidePreview();
   const overridesActive = developerMode && allowNoHeadset;
   const changed = changedTunables(tunables);
   const bitrate = tunables.opusBitrateBps;
@@ -156,20 +155,7 @@ export function DebugScreen() {
         />
       </Card>
 
-      <Card testID="card-preview">
-        <SectionHeading icon="motorcycle">{strings.debug.previewHeading}</SectionHeading>
-        <ChoiceRow
-          testID="choice-ride-preview"
-          label={strings.debug.previewHint}
-          choices={RIDE_PREVIEWS.map((value) => ({
-            value,
-            label: strings.debug.previewStates[value],
-            testID: `choice-preview-${value}`,
-          }))}
-          value={preview}
-          onChange={setPreview}
-        />
-      </Card>
+      <LoopbackCard />
 
       <Card testID="card-overrides">
         <SectionHeading icon="wrench" color={colors.vermilion}>

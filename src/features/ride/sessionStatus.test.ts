@@ -1,6 +1,6 @@
 import type { SessionState } from '../../core/session/types';
 
-import { describeSession, linkQuality, qualityWord, rideCaption } from './sessionStatus';
+import { describeSession, linkQuality, linkTellTale, qualityWord, rideCaption } from './sessionStatus';
 
 const STATES: SessionState[] = [
   'idle',
@@ -57,20 +57,39 @@ describe('linkQuality', () => {
 
 describe('rideCaption', () => {
   it('only says the voice is clear while linked with a strong link', () => {
-    expect(rideCaption('connected', 0.9, 'Alex')).toMatch(/^Voice clear/);
-    expect(rideCaption('connected', 0.5, 'Alex')).toMatch(/^Voice fair/);
-    expect(rideCaption('connected', 0.2, 'Alex')).toMatch(/^Voice weak/);
+    expect(rideCaption('connected', 0.9, 'Alex', 'lan')).toMatch(/^Voice clear/);
+    expect(rideCaption('connected', 0.5, 'Alex', 'lan')).toMatch(/^Voice fair/);
+    expect(rideCaption('connected', 0.2, 'Alex', 'lan')).toMatch(/^Voice weak/);
     for (const state of STATES.filter((s) => s !== 'connected')) {
-      expect(rideCaption(state, 1, 'Alex')).not.toMatch(/Voice clear/);
+      expect(rideCaption(state, 1, 'Alex', 'lan')).not.toMatch(/Voice clear/);
     }
   });
 
   it('names the partner while the link comes up and says the link dropped while reconnecting', () => {
     for (const state of ['starting', 'linking', 'signaling', 'connecting'] as const) {
-      expect(rideCaption(state, 0, 'Alex')).toContain('Finding Alex');
+      expect(rideCaption(state, 0, 'Alex', 'lan')).toContain('Finding Alex');
     }
-    expect(rideCaption('reconnecting', 0.15, 'Alex')).toMatch(/^Link dropped · retrying/);
-    expect(rideCaption('idle', 0, 'Alex')).toMatch(/^Not riding/);
-    expect(rideCaption('ended', 0, 'Alex')).toMatch(/^Not riding/);
+    expect(rideCaption('reconnecting', 0.15, 'Alex', 'lan')).toMatch(/^Link dropped · retrying/);
+    expect(rideCaption('idle', 0, 'Alex', null)).toMatch(/^Not riding/);
+    expect(rideCaption('ended', 0, 'Alex', 'lan')).toMatch(/^Ride ended/);
+  });
+});
+
+describe('rideCaption transport', () => {
+  it('names how the link travels, never Wi-Fi Direct on a LAN ride', () => {
+    expect(rideCaption('connected', 0.9, 'Alex', 'lan')).toContain('shared Wi-Fi');
+    expect(rideCaption('connected', 0.9, 'Alex', 'lan')).not.toContain('Wi-Fi Direct');
+    expect(rideCaption('linking', 0, 'Alex', 'wifi-direct')).toContain('Wi-Fi Direct');
+    expect(rideCaption('linking', 0, 'Alex', null)).toContain('shared Wi-Fi');
+  });
+});
+
+describe('linkTellTale', () => {
+  it('shows the attempt number while reconnecting and words for every state', () => {
+    expect(linkTellTale('connected', 0)).toEqual({ tone: 'success', value: 'Linked' });
+    expect(linkTellTale('reconnecting', 3)).toEqual({ tone: 'warning', value: 'Retrying · try 3' });
+    expect(linkTellTale('reconnecting', 0).value).toBe('Retrying');
+    expect(linkTellTale('linking', 0).tone).toBe('info');
+    expect(linkTellTale('ended', 0).value).toBe('Ride ended');
   });
 });

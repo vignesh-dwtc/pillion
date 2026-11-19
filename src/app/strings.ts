@@ -31,16 +31,6 @@ export const strings = {
     versionLabel: (version: string) => `Offline · v${version}`,
   },
 
-  placeholder: {
-    tag: 'Placeholder',
-    ride: 'Placeholder: there is no live session yet. Everything on this screen is sample state.',
-    rideShort: 'Sample state · no live session yet',
-    diagnostics:
-      'Sample data: no ride is running, so these are example values. Live values arrive with the session.',
-    startNote:
-      'Start opens the placeholder ride screen. The live session is connected in the next milestone.',
-  },
-
   onboarding: {
     title: `Welcome to ${name}`,
     eyebrow: 'Before the first ride',
@@ -123,6 +113,36 @@ export const strings = {
     ready: (you: string) => `Ready to ride, ${you}`,
     readyPlain: 'Ready to ride',
     readyBody: 'Both phones tap Begin. The link comes up on its own; you will hear a chime.',
+    resume: 'Return to ride',
+    resumeSub: (state: string) => `Ride running · ${state}`,
+    earbudsChecking: 'Checking',
+    primer: {
+      eyebrow: 'Before the first ride',
+      title: (count: number) =>
+        count <= 1 ? 'One thing to allow' : count === 2 ? 'Two things to allow' : 'Three things to allow',
+      body: 'Android asks for each one in a moment. Here is why the ride needs them.',
+      why: {
+        microphone: 'Microphone: carries your voice to your partner. Nothing is recorded or stored.',
+        notifications:
+          'Notifications: the ride notification keeps the link alive with the screen off, with Mute and End buttons.',
+        bluetooth: 'Bluetooth: routes the call audio to your earbuds.',
+        nearbyDevices: 'Nearby devices: finds your partner’s phone.',
+      },
+      allow: 'Allow and begin',
+      allowSub: 'Android asks next',
+      openSettings: 'Open settings',
+      openSettingsSub: 'Allow it there, then come back',
+      blocked: (names: string) =>
+        `${names} is switched off for this app. Open settings, then Permissions, and allow it.`,
+      stillMissing: (names: string) => `${names} is still needed for a ride.`,
+      notNow: 'Not now',
+      names: {
+        microphone: 'Microphone',
+        notifications: 'Notifications',
+        bluetooth: 'Bluetooth',
+        nearbyDevices: 'Nearby devices',
+      },
+    },
     notPairedTitle: 'Two phones, one link',
     notPairedBody: 'Pair the two phones once, face to face. After that every ride is one tap.',
     pairPlate: 'Pair your pillion',
@@ -259,19 +279,43 @@ export const strings = {
     withPartner: (partner: string) => `with ${partner}`,
     /** The caption under "with <partner>", by gauge state (sessionStatus.rideCaption picks one). */
     captions: {
-      linked: (voice: string) => `${voice} · Wi-Fi Direct · screen can go dark, audio continues`,
-      connecting: (partner: string) => `Finding ${partner} · Wi-Fi Direct · keep both phones close`,
+      linked: (voice: string, via: string) => `${voice} · ${via} · screen can go dark, audio continues`,
+      connecting: (partner: string, via: string) =>
+        `Finding ${partner} · ${via} · both phones on the same Wi-Fi, both tap Begin ride`,
       reconnecting: 'Link dropped · retrying on its own · audio returns with the chime',
       idle: 'Not riding · tap Begin ride on both phones',
+      ended: 'Ride ended · tap Back home, then Begin ride to ride again',
+    },
+    /** How the link travels, in the captions. */
+    via: {
+      lan: 'shared Wi-Fi',
+      'wifi-direct': 'Wi-Fi Direct',
+      'web-relay': 'dev relay',
+      memory: 'test link',
     },
     voice: { strong: 'Voice clear', fair: 'Voice fair', weak: 'Voice weak', down: 'No voice' },
     gaugeSummary: (quality: string, delayMs: string | null, partner: string, battery: string) =>
       `Voice link ${quality}, ${delayMs === null ? 'delay unknown' : `${delayMs} millisecond delay`}, ${partner}'s battery ${battery}`,
     quality: { strong: 'strong', fair: 'fair', weak: 'weak', down: 'down' },
     tellEarbuds: 'Earbuds',
-    tellPartnerMic: (partner: string) => `${partner}'s mic`,
     tellLink: 'Link',
     tellBattery: 'Your battery',
+    tellPartner: 'Partner',
+    partnerUnknown: 'Waiting',
+    partnerSummary: (micMuted: boolean, earbuds: boolean) =>
+      `${micMuted ? 'Mic muted' : 'Mic live'}\n${earbuds ? 'Earbuds on' : 'No earbuds'}`,
+    partnerOffline: 'Not linked',
+    linkAttempt: (attempt: number) => `Retrying · try ${attempt}`,
+    ended: 'Ride ended',
+    endedByYou: 'You ended the ride.',
+    backHome: 'Back home',
+    backHomeSub: 'Begin ride starts a new one',
+    notStarted: 'No ride is running. Go back and tap Begin ride.',
+    startProblems: {
+      'no-pairing': 'This phone has no saved pairing. Pair again, then Begin ride.',
+      storage: 'The saved pairing could not be read. Try again, or pair again.',
+      'busy-loopback': 'The loopback self-test is using the microphone. Wait for it to finish.',
+    },
     earbudsOn: 'Connected',
     earbudsOff: 'Not connected',
     micLive: 'Live',
@@ -371,14 +415,24 @@ export const strings = {
     title: 'Developer tools',
     eyebrow: 'Workshop sheet',
     overridesActive: 'Developer overrides are active on this phone.',
-    previewHeading: 'Ride preview (sample data)',
-    previewHint: 'Shows the ride screen in a chosen state until the live session arrives.',
-    previewStates: {
-      connected: 'Linked',
-      connecting: 'Connecting',
-      reconnecting: 'Reconnecting',
-      'headset-missing': 'No headset',
+    loopbackHeading: 'Loopback self-test',
+    loopbackHint:
+      'Plays your own microphone back to your earbuds through a local WebRTC loop for 10 seconds. Speak and listen. Nothing is recorded.',
+    loopbackRun: 'Run loopback self-test',
+    loopbackCancel: 'Stop self-test',
+    loopbackBusy: 'A ride is running: end it first, the ride owns the microphone.',
+    loopbackPhases: {
+      starting: 'Starting the microphone…',
+      negotiating: 'Negotiating…',
+      connecting: 'Connecting…',
+      running: 'Running: speak now',
+      finished: 'Finished',
     },
+    loopbackPassed: 'Passed: audio went round the loop.',
+    loopbackFailed: (reason: string) => `Failed: ${reason}`,
+    loopbackDetail: (connectMs: string, sent: string, received: string, lost: number) =>
+      `Connected in ${connectMs} · sent ${sent} · received ${received} · lost ${lost} packets`,
+    loopbackMicNeeded: 'The microphone permission is needed for the self-test.',
     intro: 'Hidden screen for tuning on the road. Changes apply immediately and are saved on this phone.',
     tunablesHeading: 'Audio tunables',
     changed: 'Changed from default',
