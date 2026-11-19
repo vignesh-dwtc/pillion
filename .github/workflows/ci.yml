@@ -1,0 +1,143 @@
+# CI for the repository. Owned by `foundation`.
+# If the hosting platform rejects workflow changes on push, hand this file over as-is (it is self-contained).
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  checks:
+    name: Typecheck, lint, format, Jest
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm test
+      # Web-only code (fakes, dev relay, the localStorage secure-store stand-in) must never reach the Android bundle:
+      # exports the Hermes bundle and scans it for web-only markers (docs/ARCHITECTURE.md section 7).
+      - run: npm run check:bundle
+
+  web-e2e:
+    name: Web build and Playwright e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      # Installs the Chromium that matches the pinned @playwright/test version, plus system libraries.
+      - run: npx playwright install --with-deps chromium
+      - run: npm run web:build
+      # Self-test of the bundle guard: the web export DOES contain the web-only markers, so the scan can see them.
+      - run: node scripts/check-android-bundle.mjs --dir dist --expect-found
+      - run: npm run e2e
+        env:
+          CI: 'true'
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-screens
+          path: e2e/.artifacts/screens
+          if-no-files-found: ignore
+          retention-days: 14
+
+  android:
+    name: Android debug build and Kotlin unit tests (arm64)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      ANDROID_PLATFORM: 'platforms;android-37.0'
+      ANDROID_BUILD_TOOLS: 'build-tools;37.0.0'
+      ANDROID_NDK: 'ndk;27.1.12297006'
+      ANDROID_CMAKE: 'cmake;3.22.1'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      # android/ is generated from app.config.ts + config plugins and committed: fail when it drifted from a fresh
+      # prebuild (a hand edit inside android/, or a config change without `npm run prebuild:android`).
+      - name: Check android/ matches a fresh expo prebuild
+        run: |
+          set -euo pipefail
+          npm run prebuild:android
+          if ! git diff --exit-code -- android || [ -n "$(git status --porcelain -- android)" ]; then
+            git status --porcelain -- android
+            echo "::error::android/ differs from 'npm run prebuild:android': regenerate it and commit the result"
+            exit 1
+          fi
+      - name: Install Android SDK packages
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="$(command -v sdkmanager)"; fi
+          # `yes` dies of SIGPIPE when sdkmanager exits, which is expected: drop pipefail for this one pipeline only, so
+          # its status is sdkmanager's own and a real licence failure still fails the step.
+          (set +o pipefail; yes | "$SDKMANAGER" --licenses >/dev/null)
+          test -f "$ANDROID_HOME/licenses/android-sdk-license" || { echo "::error::Android SDK licence not accepted"; exit 1; }
+          "$SDKMANAGER" "platform-tools" "$ANDROID_PLATFORM" "$ANDROID_BUILD_TOOLS" "$ANDROID_NDK" "$ANDROID_CMAKE"
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties', 'modules/**/*.gradle*', 'package-lock.json') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+      - name: Assemble debug APK and run Kotlin unit tests
+        working-directory: android
+        run: ./gradlew :app:assembleDebug testDebugUnitTest -PreactNativeArchitectures=arm64-v8a --no-daemon --console=plain
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: pillion-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+      # ---- PLACEHOLDER (android-native): second APK variant, e.g. release with debug signing. ----
+      # Add the Gradle task to the step above (or a new step), then:
+      # - name: Upload release-with-debug-signing APK
+      #   uses: actions/upload-artifact@v7
+      #   with:
+      #     name: pillion-release-debugsigned-apk
+      #     path: android/app/build/outputs/apk/release/*.apk
+      #     if-no-files-found: error
+      # ---- END PLACEHOLDER ----

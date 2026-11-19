@@ -1,0 +1,20 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.intercom'
+version = '0.1.0'
+
+android {
+  namespace "expo.modules.intercom"
+  defaultConfig {
+    versionCode 1
+    versionName "0.1.0"
+  }
+}
+
+dependencies {
+  // Plain-Kotlin logic in expo.modules.intercom.logic has JVM tests only (no Robolectric, no Android types).
+  testImplementation 'junit:junit:4.13.2'
+}

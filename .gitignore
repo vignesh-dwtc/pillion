@@ -1,0 +1,54 @@
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native build output (the android/ project itself IS committed)
+.kotlin/
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+android/**/build/
+android/**/.cxx/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# test output
+coverage/
+playwright-report/
+test-results/
+e2e/.artifacts/
+
+# per-agent web export dirs (parallel agents never share dist/)
+dist-*/
+
+# Gradle output of local modules
+modules/**/build/
+modules/**/.cxx/

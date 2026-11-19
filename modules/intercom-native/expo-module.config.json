@@ -1,0 +1,10 @@
+{
+  "platforms": ["android"],
+  "android": {
+    "modules": [
+      "expo.modules.intercom.IntercomLinkModule",
+      "expo.modules.intercom.IntercomAudioRouteModule",
+      "expo.modules.intercom.IntercomRideServiceModule"
+    ]
+  }
+}
