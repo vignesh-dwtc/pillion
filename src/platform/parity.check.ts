@@ -7,7 +7,7 @@
  * compiler, so without this file a web twin could drift from the native signature and only fail in the browser.
  * Each assertion fails `npm run typecheck` when the exported factory types differ.
  *
- * Areas with a native sibling today: permissions, storage (written by `ui`).
+ * Areas with a native sibling today: permissions, storage, crypto (written by `ui`).
  * M1 TODO (add the line when the native factory module lands, same pattern):
  *   link     -> ./link/createLinkTransport       (android-native)
  *   media    -> ./media/createMediaEngine        (media)
@@ -21,6 +21,8 @@ import type { createPermissionService as nativeCreatePermissionService } from '.
 import type { createPermissionService as webCreatePermissionService } from './permissions/createPermissionService.web';
 import type { createSecureStore as nativeCreateSecureStore } from './storage/createSecureStore';
 import type { createSecureStore as webCreateSecureStore } from './storage/createSecureStore.web';
+import type { createRandomBytesSource as nativeCreateRandomBytesSource } from './crypto/createRandomBytesSource';
+import type { createRandomBytesSource as webCreateRandomBytesSource } from './crypto/createRandomBytesSource.web';
 
 /** Strict type identity (not just mutual assignability). */
 type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
@@ -30,3 +32,6 @@ export type PermissionServiceParity = Expect<
   Equals<typeof nativeCreatePermissionService, typeof webCreatePermissionService>
 >;
 export type SecureStoreParity = Expect<Equals<typeof nativeCreateSecureStore, typeof webCreateSecureStore>>;
+export type RandomBytesSourceParity = Expect<
+  Equals<typeof nativeCreateRandomBytesSource, typeof webCreateRandomBytesSource>
+>;

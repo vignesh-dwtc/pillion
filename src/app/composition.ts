@@ -1,4 +1,6 @@
 import type { PairingRepository } from '../core/pairing/types';
+import { createCryptoProvider, type CryptoProvider } from '../core/protocol';
+import { createRandomBytesSource } from '../platform/crypto';
 import type { PermissionService } from '../platform/permissions/PermissionService';
 import { createPermissionService } from '../platform/permissions';
 import {
@@ -9,13 +11,15 @@ import {
 } from '../platform/storage';
 import type { KeyValueStore } from '../platform/storage/stores';
 
+import { createPairingService, type PairingService } from './pairing';
 import { createAppStore, type AppStore } from './store';
 import { strings } from './strings';
 
 /**
- * Composition root (the only place that touches platform adapters). M0 wires storage and permissions only: the
- * session controller, audio route, media engine, link transport and ride service are added here in M1
- * (`createSessionController({...})`), and `onTunablesChanged` then forwards edits to `media.setTunables`.
+ * Composition root (the only place that touches platform adapters). Wired so far: storage, permissions, the crypto
+ * provider (expo-crypto on native, WebCrypto on web) and the pairing service. Still to come in M1: the session
+ * controller, audio route, media engine, link transport and ride service (`createSessionController({...})`), and
+ * `onTunablesChanged` then forwards edits to `media.setTunables`.
  */
 
 function openKeyValueStore(): KeyValueStore {
@@ -39,4 +43,15 @@ export const appStore: AppStore = createAppStore({
   kv: keyValueStore,
   pairings: pairingRepository,
   defaultDeviceName: strings.settings.defaultDeviceName,
+});
+
+/** Randomness: expo-crypto `getRandomValues` on native, `crypto.getRandomValues` on web (platform twin). */
+export const cryptoProvider: CryptoProvider = createCryptoProvider(createRandomBytesSource());
+
+/** Host offer / guest scan. Every change re-reads the store's pairing summaries (which never hold a secret). */
+export const pairingService: PairingService = createPairingService({
+  repository: pairingRepository,
+  crypto: cryptoProvider,
+  now: () => Date.now(),
+  onChanged: () => appStore.getState().refreshPairings(),
 });

@@ -23,7 +23,7 @@ import { TellTale } from '../components/TellTale';
 import { VersionLabel } from '../components/VersionLabel';
 import { usePermissionStatus } from '../onboarding/usePermissionStatus';
 
-import { dialPair } from './dialModel';
+import { dialPair, primaryPairing } from './dialModel';
 
 const KEY_TURN_MS = 220;
 
@@ -63,8 +63,8 @@ export function HomeScreen() {
   const [permissions] = usePermissionStatus();
   const keyTurn = useAnimatedValue(0);
 
-  // Stage 1 holds one partner; the data model is a list.
-  const pairing = pairings[0] ?? null;
+  // Stage 1 holds one partner; the data model is a list (Home shows the most recent pairing).
+  const pairing = primaryPairing(pairings);
   const column = Math.min(width, 560) - 2 * gutter;
   const named = deviceName && deviceName !== strings.settings.defaultDeviceName;
   const loss = diagnostics.sample?.lossPct ?? 0;
@@ -202,6 +202,27 @@ export function HomeScreen() {
         pair={{ riderInitial: model.riderInitial, pillionInitial: model.pillionInitial, since: model.since }}
         accessibilityLabel={strings.home.dialPairedLabel(deviceName, model.partner, model.since)}
       />
+      <View
+        testID="home-partner"
+        accessible
+        aria-label={`${strings.home.pairedWithLegend} ${pairing.partnerName ?? strings.home.partnerFallback}. ${
+          pairing.role === 'host' ? strings.home.roleHost : strings.home.roleGuest
+        }. ${strings.home.dialSince(model.since)}.`}
+        style={{ alignItems: 'center', gap: 2 }}
+      >
+        <Legend>{strings.home.pairedWithLegend}</Legend>
+        <AppText variant="partnerScriptRow" color={colors.brassLight} testID="home-partner-name">
+          {pairing.partnerName ?? strings.home.partnerFallback}
+        </AppText>
+        <AppText variant="caption" color={colors.textSubtle} align="center" testID="home-partner-detail">
+          {`${pairing.role === 'host' ? strings.home.roleHost : strings.home.roleGuest} · ${strings.home.dialSince(model.since)}`}
+        </AppText>
+        {pairing.partnerName === null ? (
+          <AppText variant="caption" color={colors.textSubtle} align="center">
+            {strings.home.partnerNameLater}
+          </AppText>
+        ) : null}
+      </View>
       <View style={{ gap: spacing.xs }}>
         <AppText variant="title">{named ? strings.home.ready(deviceName) : strings.home.readyPlain}</AppText>
         <AppText variant="body" color={colors.textMuted}>

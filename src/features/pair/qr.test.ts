@@ -1,4 +1,13 @@
-import { SAMPLE_PAIRING_STRING, buildQrModel, matrixToPath, QR_QUIET_ZONE } from './qr';
+import { encodePairingString, generatePairing } from '../../core/pairing';
+import { createCryptoProvider } from '../../core/protocol/noble';
+import { seededRandomBytes } from '../../core/protocol/testing/rng';
+
+import { buildQrModel, matrixToPath, QR_QUIET_ZONE } from './qr';
+
+/** A real pairing string with the longest host name the payload allows (24 three-byte characters). */
+const WORST_CASE = encodePairingString(
+  generatePairing(createCryptoProvider(seededRandomBytes(3)), '\u6F22'.repeat(24)),
+);
 
 describe('matrixToPath', () => {
   it('merges horizontal runs and offsets by the quiet zone', () => {
@@ -60,17 +69,14 @@ describe('buildQrModel', () => {
   });
 
   it('is deterministic', () => {
-    expect(buildQrModel(SAMPLE_PAIRING_STRING)).toEqual(buildQrModel(SAMPLE_PAIRING_STRING));
+    expect(buildQrModel(WORST_CASE)).toEqual(buildQrModel(WORST_CASE));
   });
 
   it('scales with the payload (a realistic length needs a larger symbol than a short one)', () => {
-    expect(buildQrModel(SAMPLE_PAIRING_STRING).size).toBeGreaterThan(buildQrModel('hi').size);
+    expect(buildQrModel(WORST_CASE).size).toBeGreaterThan(buildQrModel('hi').size);
   });
-});
 
-describe('SAMPLE_PAIRING_STRING', () => {
-  it('is long like a real payload but obviously fake', () => {
-    expect(SAMPLE_PAIRING_STRING.length).toBeGreaterThan(150);
-    expect(SAMPLE_PAIRING_STRING).toContain('NOT-A-REAL-PAIRING-CODE');
+  it('fits the worst-case real pairing string in QR version 12 at ECC M (65 modules)', () => {
+    expect(buildQrModel(WORST_CASE).size).toBeLessThanOrEqual(17 + 4 * 12);
   });
 });

@@ -55,6 +55,3 @@ export const webFontScale = (() => {
   const value = match?.[1] ? Number(match[1]) : 1;
   return Number.isFinite(value) && value >= 1 && value <= 2 ? value : 1;
 })();
-
-/** M0 PLACEHOLDER: `?camera=denied` on web shows the guest screen's camera-denied state (screenshots). */
-export const cameraPreviewDenied = /[?&]camera=denied\b/.test(initialSearch ?? '');

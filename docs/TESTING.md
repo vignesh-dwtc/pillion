@@ -40,9 +40,22 @@ Filled in per milestone (M1 first). Each item says exactly what to do and what t
 
 _Placeholder. The M1 checklist, the APK location and the paste-back template are added when M1 is built._
 
+#### M1 slice 1 - real QR pairing (compiles and unit-tested, web-verified, untested on device)
+
+Two phones, A (host) and B (guest), fresh install on both unless stated. Paste back one line per item: pass/fail plus what you saw.
+
+1. **Scan host -> guest.** A: Settings > name "Robin"; Home > Pair your pillion. Expected: a real QR on the plate with "Robin" under it, no "Sample code" badge. B: Home > Scan partner's plate. Expected: an explanation and "Allow camera" BEFORE any system dialog; tap it, allow. Expected: live camera inside the brass frame; aim at A's plate. Expected within 2 s: a vibration, the dial animates, "Paired with Robin", then Home on its own after about 4 s showing "Paired with Robin · You scanned the code (guest) · Since <today>". A: tap Done; Home shows "Paired with your partner · You showed the code (host)".
+2. **Deny, then grant camera.** Fresh B: open Scan, tap Allow camera, choose "Don't allow". Expected: "Camera not allowed" and "Allow camera" again (no settings link yet). Tap it, allow. Expected: live preview without leaving the screen.
+3. **Blocked permission.** Fresh B: deny twice (Android turns the second denial into "don't ask again"). Expected: "Camera blocked" and "Open settings". Tap it, enable Camera in the app's permission page, press Back. Expected: the live preview appears without reopening the screen.
+4. **Worst-case QR at arm's length.** A: Settings name of 24 wide characters (for example 24 x "W", then try 12 emoji). Show the plate at full brightness; B scans from 20-30 cm, then from arm's length (about 60 cm), indoors and in daylight. Paste back the farthest distance that still pairs and the seconds it took.
+5. **Wrong QR.** B: point the scanner at any other QR (a URL, a Wi-Fi code). Expected: one friendly "That is not a pairing plate" message (no flicker, no repeated vibration) and scanning continues; then scan A's plate and it pairs.
+6. **Restart keeps the pairing.** Swipe the app away on both phones (or reboot). Reopen. Expected: Home shows the same partner and date immediately; A's pairing screen shows the same QR as before (reused offer) until New code is tapped.
+7. **New code.** A: Pair your pillion > New code. Expected: a different QR and "The previous code no longer works". B (after Forget pairing on B) scans the new code and pairs. Note: a phone that scanned the previous code still accepts it (scanning is offline and one-way); that pairing fails only when a ride starts.
+8. **Forget pairing.** Settings > Forget pairing: first tap turns into "Tap again to forget", second tap removes it; Home returns to "Not paired yet". Reopen the app: still not paired.
+
 Fixed item for the M1 checklist, **export never leaks the pairing secret** (untested until then):
 
-1. Pair the two phones with developer mode on, so the host's pairing screen also offers the pairing string as text. Copy that string into a notes app on the host phone (it never leaves that phone; delete the note at the end).
+1. Pair the two phones with developer mode on, so the host's pairing screen also offers "Copy pairing string" (never shown as text). Copy it and paste it into a notes app on the host phone (it never leaves that phone; delete the note at the end).
 2. Ride for at least 2 minutes, end the ride, then on BOTH phones open Diagnostics > Share diagnostics and share to the same notes app.
 3. In each exported note, search for: the whole pairing string; the part after the first `:`; any 12 consecutive characters of that part (three different positions); the pairing prefix followed by the version and a colon (`pairingPrefix` from `config/identity.json` + `PAIRING_VERSION`, today `pillion1:`). Expected: zero hits for all of them; `[redacted]` may appear.
 4. Paste back: "export secret check: host 0 hits / guest 0 hits" (or the count and the field it appeared in, never the matching text itself). Then delete both notes.

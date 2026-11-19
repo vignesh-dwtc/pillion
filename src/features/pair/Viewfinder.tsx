@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import Svg, { Circle, Defs, G, Line, LinearGradient, Path, Stop } from 'react-native-svg';
 
@@ -11,21 +12,26 @@ const SCREW_ANGLES = [41, 133, 77, 168];
 
 /**
  * Guest viewfinder: a chamfered brass bezel with corner screws around the camera area and an engraved scan line.
- * M0: the inside is a placeholder; the expo-camera preview replaces it in the pairing milestone, inside the same
- * bezel.
+ * With `live` content (the camera preview) the window is cut out of the bezel and the preview shows through it,
+ * under the brass corner marks; without it the window is an enamel face with an icon, a title and a note.
  */
 export function Viewfinder({
   size,
   title,
   note,
+  icon = 'camera',
   accessibilityLabel,
   testID,
+  live,
 }: {
   size: number;
-  title: string;
-  note: string;
+  title?: string;
+  note?: string;
+  icon?: 'camera' | 'check' | 'warning-triangle' | 'shield-check';
   accessibilityLabel: string;
   testID?: string;
+  /** The live camera preview, drawn under the bezel inside the window. */
+  live?: ReactNode;
 }) {
   const frame = 16;
   const screws = [
@@ -51,7 +57,22 @@ export function Viewfinder({
         justifyContent: 'center',
       }}
     >
-      <Svg width={size} height={size} style={{ position: 'absolute', left: 0, top: 0 }}>
+      {live ? (
+        <View
+          style={{
+            position: 'absolute',
+            left: frame,
+            top: frame,
+            width: inner,
+            height: inner,
+            overflow: 'hidden',
+            backgroundColor: colors.face,
+          }}
+        >
+          {live}
+        </View>
+      ) : null}
+      <Svg width={size} height={size} style={{ position: 'absolute', left: 0, top: 0 }} pointerEvents="none">
         <Defs>
           <LinearGradient id="vf-brass" x1="0" y1="0" x2="1" y2="1">
             <Stop offset="0" stopColor={colors.brassLight} />
@@ -59,10 +80,20 @@ export function Viewfinder({
             <Stop offset="1" stopColor={colors.brassShadow} />
           </LinearGradient>
         </Defs>
-        <Path d={chamferPath(size, size, 20, 0.5)} fill="url(#vf-brass)" stroke={colors.brassDeep} />
+        {live ? (
+          // Bezel with a window: outer and inner outline in one path, the window left open (even-odd).
+          <Path
+            d={`${chamferPath(size, size, 20, 0.5)}${chamferPath(size, size, 14, frame)}`}
+            fill="url(#vf-brass)"
+            fillRule="evenodd"
+            stroke={colors.brassDeep}
+          />
+        ) : (
+          <Path d={chamferPath(size, size, 20, 0.5)} fill="url(#vf-brass)" stroke={colors.brassDeep} />
+        )}
         <Path
           d={chamferPath(size, size, 14, frame)}
-          fill={colors.face}
+          fill={live ? 'none' : colors.face}
           stroke={colors.onBrass}
           strokeOpacity={0.6}
         />
@@ -120,24 +151,30 @@ export function Viewfinder({
         />
         <Path d={`M${a} ${size / 2 - 4}l5 4-5 4zM${b} ${size / 2 - 4}l-5 4 5 4z`} fill={colors.brass} />
       </Svg>
-      <View
-        style={{
-          alignItems: 'center',
-          gap: spacing.sm,
-          paddingHorizontal: spacing.xxl,
-          marginTop: -size * 0.22,
-        }}
-      >
-        <Icon name="camera" size={32} color={colors.textMuted} />
-        <AppText variant="bodyLarge" align="center">
-          {title}
-        </AppText>
-      </View>
-      <View style={{ position: 'absolute', bottom: frame + 18, left: frame + 20, right: frame + 20 }}>
-        <AppText variant="caption" align="center" color={colors.textSubtle}>
-          {note}
-        </AppText>
-      </View>
+      {live ? null : (
+        <View
+          style={{
+            alignItems: 'center',
+            gap: spacing.sm,
+            paddingHorizontal: spacing.xxl,
+            marginTop: -size * 0.22,
+          }}
+        >
+          <Icon name={icon} size={32} color={colors.textMuted} />
+          {title ? (
+            <AppText variant="bodyLarge" align="center">
+              {title}
+            </AppText>
+          ) : null}
+        </View>
+      )}
+      {!live && note ? (
+        <View style={{ position: 'absolute', bottom: frame + 18, left: frame + 20, right: frame + 20 }}>
+          <AppText variant="caption" align="center" color={colors.textSubtle}>
+            {note}
+          </AppText>
+        </View>
+      ) : null}
     </View>
   );
 }
