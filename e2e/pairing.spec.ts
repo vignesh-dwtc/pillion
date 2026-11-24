@@ -1,7 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { devices, expect, test, type Browser, type Page } from '@playwright/test';
+import { devices, expect, test, type Browser, type Locator, type Page } from '@playwright/test';
+
+/** The pairing QR encodes the pairing secret: it is painted over in every screenshot (never a secret in artifacts). */
+function noSecrets(page: Page): { mask: Locator[]; maskColor: string } {
+  return { mask: [page.getByTestId('qr-code')], maskColor: '#7f7f7f' };
+}
 
 /**
  * Real pairing through the UI, two browser contexts = two phones. Context A (host) turns on developer mode, opens
@@ -51,7 +56,7 @@ const ANIMATIONS_SETTLED_MS = 1500;
 async function shot(page: Page, name: string): Promise<void> {
   await settle(page);
   await page.waitForTimeout(ANIMATIONS_SETTLED_MS);
-  await page.screenshot({ path: path.join(SCREEN_DIR, `${name}.png`) });
+  await page.screenshot({ path: path.join(SCREEN_DIR, `${name}.png`), ...noSecrets(page) });
   const scrolled = await page.evaluate(() => {
     let moved = false;
     for (const element of document.querySelectorAll<HTMLElement>('[data-testid^="screen-"] *')) {
@@ -67,7 +72,7 @@ async function shot(page: Page, name: string): Promise<void> {
   });
   if (scrolled) {
     await page.waitForTimeout(300);
-    await page.screenshot({ path: path.join(SCREEN_DIR, `${name}-end.png`) });
+    await page.screenshot({ path: path.join(SCREEN_DIR, `${name}-end.png`), ...noSecrets(page) });
   }
 }
 

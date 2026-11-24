@@ -1,7 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+
+/** The pairing QR encodes the pairing secret: it is painted over in every screenshot (never a secret in artifacts). */
+function noSecrets(page: Page): { mask: Locator[]; maskColor: string } {
+  return { mask: [page.getByTestId('qr-code')], maskColor: '#7f7f7f' };
+}
 
 /**
  * Smoke test: every screen opens by deep link at the Pixel 7 profile, renders its root test id, logs no console
@@ -103,7 +108,10 @@ test.describe('smoke: every screen opens by deep link', () => {
         [],
       );
 
-      await page.screenshot({ path: path.join(SCREENSHOT_DIR, `${screenshotName(route)}.png`) });
+      await page.screenshot({
+        path: path.join(SCREENSHOT_DIR, `${screenshotName(route)}.png`),
+        ...noSecrets(page),
+      });
 
       expect(errors, 'console errors / page errors').toEqual([]);
     });
@@ -150,14 +158,14 @@ test.describe('smoke: web-only dev panel', () => {
     await page.getByTestId('devpanel-block-link').click();
     await expect(page.getByTestId('devpanel-link-state')).toHaveText('blocked');
 
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'devpanel-open.png') });
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'devpanel-open.png'), ...noSecrets(page) });
 
     // It can be moved to the top so it does not hide the controls at the bottom of a screen.
     const bottomEdge = async () => (await page.getByTestId('devpanel').boundingBox())!.y;
     const yAtBottom = await bottomEdge();
     await page.getByTestId('devpanel-move').click();
     expect(await bottomEdge()).toBeLessThan(yAtBottom);
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'devpanel-open-top.png') });
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'devpanel-open-top.png'), ...noSecrets(page) });
 
     await page.getByTestId('devpanel-close').click();
     await expect(page.getByTestId('devpanel')).toHaveCount(0);
