@@ -1,4 +1,35 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-  <!-- Normal permission: read-only network state (is a Wi-Fi network connected). -->
+  <!--
+    Merged into the app manifest. Sources (read 2026-11-19): developer.android.com/develop/background-work/services/fgs/service-types,
+    .../fgs/declare, reference/android/Manifest.permission, reference/android/net/wifi/WifiManager, use-nsd. Everything here is
+    a normal (install-time) permission except BLUETOOTH_CONNECT and POST_NOTIFICATIONS, which PermissionService requests.
+    RECORD_AUDIO (dangerous) is declared by app.config.ts.
+  -->
+
+  <!-- Link: sockets, network state, NSD/mDNS multicast, Wi-Fi locks. -->
+  <uses-permission android:name="android.permission.INTERNET" />
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+  <!-- MulticastLock for mDNS; also satisfies the connectedDevice FGS runtime prerequisite (API 34+). -->
+  <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+  <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+  <!-- Audio route: communication mode, communication device / SCO. -->
+  <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+  <!-- API 31+: runtime, needed to route to a Bluetooth headset (requested by PermissionService 'bluetooth'). -->
+  <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+  <!-- Ride foreground service. Type permissions exist from API 34 (normal); ignored on older releases. -->
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+  <!-- API 33+: runtime; without it the ride still runs, the notification is just not shown. -->
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+  <application>
+    <service
+      android:name="expo.modules.intercom.RideForegroundService"
+      android:exported="false"
+      android:foregroundServiceType="microphone|connectedDevice" />
+  </application>
 </manifest>
