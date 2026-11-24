@@ -29,3 +29,12 @@ export function dialPair(pairing: PairingSummary, you: string, partnerFallback: 
     since: formatSince(pairing.createdAt),
   };
 }
+
+/** Stage 1 shows one partner; the data model is a list. Home shows the most recent pairing. */
+export function primaryPairing(pairings: readonly PairingSummary[]): PairingSummary | null {
+  let newest: PairingSummary | null = null;
+  for (const pairing of pairings) {
+    if (!newest || pairing.createdAt > newest.createdAt) newest = pairing;
+  }
+  return newest;
+}

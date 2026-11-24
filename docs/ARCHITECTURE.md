@@ -13,7 +13,7 @@ src/core/                PURE TypeScript. No react-native. Fully unit-tested.
   session/               state machine, reconnect/backoff, testing/ fakes + two-peer simulation
   diagnostics/           ring-buffer log (redacting), stats sampler, report formatter
 src/platform/<area>/     interface file + create<X>.ts (native) + create<X>.web.ts (web twin) + shared index.ts
-  link/ media/ audio/ service/ permissions/ storage/
+  link/ media/ audio/ service/ permissions/ storage/ crypto/ (randomness source) devtools/ (web only)
 src/features/            screens: onboarding, pair, home, ride, settings, diagnostics, debug
 src/app/                 navigation, theme, store, composition root
 modules/                 local Expo modules (Kotlin): Link, AudioRoute, RideService
@@ -35,12 +35,12 @@ Dependency direction: `app` -> `features` -> `platform` -> `core`. `core` may im
 | `core-session`   | `src/core/session/**`, `src/core/diagnostics/**` (implementations, fakes, tests)                                                                                     |
 | `android-native` | `modules/**`, `specs/**`, `plugins/**`, `android/**` (generated), native TS wrappers in `src/platform/link` and `src/platform/service`                               |
 | `media`          | `src/platform/media/**`, `src/platform/audio/**` (TS wrappers, tunables, loopback)                                                                                   |
-| `ui`             | `src/features/**`, `src/app/**`, `assets/`, `src/platform/permissions/**`, `src/platform/storage/**`                                                                 |
+| `ui`             | `src/features/**`, `src/app/**`, `assets/`, `src/platform/permissions/**`, `src/platform/storage/**`, `src/platform/crypto/**`                                       |
 | `web-verify`     | every `*.web.ts(x)`, `e2e/**`, `playwright.config.ts`, `scripts/dev-relay.mjs`, `scripts/serve-web.mjs`, `src/features/devpanel/**`                                  |
 | `backend`        | `server/**`, `docker-compose.yml` (from M5 only)                                                                                                                     |
 | `reviewer`       | nothing (read-only)                                                                                                                                                  |
 
-The brief's table leaves `src/platform/link`, `src/platform/service`, `permissions` and `storage` without an owner; the assignment above fills the gap (DECISIONS D-014). Frozen contracts are listed in `CLAUDE.md`.
+The brief's table leaves `src/platform/link`, `src/platform/service`, `permissions`, `storage` and `crypto` without an owner; the assignment above fills the gap (DECISIONS D-014, D-054). As everywhere, the `.web.ts` twins inside those folders (for example `createRandomBytesSource.web.ts`) belong to `web-verify`. Frozen contracts are listed in `CLAUDE.md`.
 
 ## 3. Session state machine
 
@@ -70,9 +70,9 @@ Pairing payload (QR / pasted string): pair id (16 B), secret (32 B), host displa
 
 Local Expo modules in `modules/` (Kotlin), autolinked, merging their own manifest entries, so `expo prebuild --clean` can never delete them. Thin by design:
 
-- `Link`: NSD register/discover, TCP listen/connect, bytes in/out, interface listing; Wi-Fi Direct from M2. Framing/auth stay in TypeScript.
+- `Link`: NSD register/discover (ServiceInfoCallback on API 34+, a resolve queue on 29-33), TCP listen/connect (one peer per listener, one writer thread per connection, 1 MiB send-queue cap) in plain Kotlin (`logic/TcpHub.kt`, JVM-tested on loopback sockets), bytes in/out, interface listing, multicast + Wi-Fi locks, network-loss events; Wi-Fi Direct from M2. Framing/auth stay in TypeScript (`src/platform/link/LanTransport.ts`).
 - `AudioRoute`: communication mode and headset selection (`setCommunicationDevice` on API 31+, legacy SCO on 29-30), device-change events, cues through `USAGE_VOICE_COMMUNICATION`, restore on stop, no exclusive audio focus.
-- `RideService`: foreground service (microphone + connected-device types), wake and Wi-Fi locks, notification actions, battery.
+- `RideService`: foreground service (microphone + connected-device types), started only from a visible activity with RECORD_AUDIO granted; partial wake lock and Wi-Fi locks for the ride, Mute/Unmute and End notification actions (the latest press is kept until JS subscribes), battery.
 
 JS passes names (service type, channel id, strings) at runtime from `config/identity.json`.
 

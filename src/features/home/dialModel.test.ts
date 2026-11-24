@@ -1,4 +1,4 @@
-import { dialPair, formatSince, initialOf } from './dialModel';
+import { dialPair, formatSince, initialOf, primaryPairing } from './dialModel';
 
 describe('home dial model', () => {
   it('formats the pairing date', () => {
@@ -22,5 +22,13 @@ describe('home dial model', () => {
       riderInitial: 'M',
       pillionInitial: 'A',
     });
+  });
+
+  it('picks the most recent pairing, or none', () => {
+    expect(primaryPairing([])).toBeNull();
+    const older = { pairId: 'a', role: 'guest' as const, partnerName: 'Old', createdAt: 1 };
+    const newer = { pairId: 'b', role: 'host' as const, partnerName: null, createdAt: 2 };
+    expect(primaryPairing([older, newer])?.pairId).toBe('b');
+    expect(primaryPairing([newer, older])?.pairId).toBe('b');
   });
 });

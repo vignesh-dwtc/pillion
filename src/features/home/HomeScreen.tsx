@@ -1,13 +1,23 @@
+import { useState } from 'react';
 import { Animated, View, useWindowDimensions } from 'react-native';
 import { useAnimatedValue } from '../components/motion/useAnimatedValue';
 
-import { useAppStore, useAudioRoute, useDiagnosticsInput } from '../../app/hooks';
+import { permissionService, rideRuntime } from '../../app/composition';
+import {
+  useAppStore,
+  useAudioRoute,
+  useRideSample,
+  useRideStartProblem,
+  useSessionSnapshot,
+} from '../../app/hooks';
+import { canStartRide, planRidePermissions } from '../../app/ridePermissions';
+import { selectAllowNoHeadset } from '../../app/store';
 import { useAppNavigation } from '../../app/navigationHooks';
 import { SCREEN_TEST_IDS } from '../../app/routes';
 import { strings } from '../../app/strings';
 import { colors, gutter, spacing } from '../../app/theme';
 import { AppText, Legend } from '../components/AppText';
-import { StatusPill } from '../components/Card';
+import { Banner, StatusPill } from '../components/Card';
 import { HeroDial } from '../components/Dial/HeroDial';
 import { Icon } from '../components/Icon';
 import { NightRoad } from '../components/illustrations/NightRoad';
@@ -23,7 +33,8 @@ import { TellTale } from '../components/TellTale';
 import { VersionLabel } from '../components/VersionLabel';
 import { usePermissionStatus } from '../onboarding/usePermissionStatus';
 
-import { dialPair } from './dialModel';
+import { dialPair, primaryPairing } from './dialModel';
+import { PermissionPrimer } from './PermissionPrimer';
 
 const KEY_TURN_MS = 220;
 
@@ -58,17 +69,22 @@ export function HomeScreen() {
   const pairings = useAppStore((s) => s.pairings);
   const pairingsStatus = useAppStore((s) => s.pairingsStatus);
   const deviceName = useAppStore((s) => s.deviceName);
+  const allowNoHeadset = useAppStore(selectAllowNoHeadset);
   const audio = useAudioRoute();
-  const diagnostics = useDiagnosticsInput();
-  const [permissions] = usePermissionStatus();
+  const snapshot = useSessionSnapshot();
+  const sample = useRideSample();
+  const startProblem = useRideStartProblem();
+  const [permissions, setPermissions] = usePermissionStatus();
+  const [primer, setPrimer] = useState(false);
   const keyTurn = useAnimatedValue(0);
+  const rideLive = snapshot.state !== 'idle' && snapshot.state !== 'ended';
 
-  // Stage 1 holds one partner; the data model is a list.
-  const pairing = pairings[0] ?? null;
+  // Stage 1 holds one partner; the data model is a list (Home shows the most recent pairing).
+  const pairing = primaryPairing(pairings);
   const column = Math.min(width, 560) - 2 * gutter;
   const named = deviceName && deviceName !== strings.settings.defaultDeviceName;
-  const loss = diagnostics.sample?.lossPct ?? 0;
-  const diagnosticsOk = !diagnostics.session?.error && loss < 5;
+  const loss = sample?.lossPct ?? 0;
+  const diagnosticsOk = !(rideLive && snapshot.error) && loss < 5;
 
   const header = (
     <View
@@ -95,8 +111,8 @@ export function HomeScreen() {
     </View>
   );
 
-  const begin = () => {
-    haptic.light();
+  /** Turns the key, then shows the ride screen; the session itself was started (or resumed) before. */
+  const showRide = () => {
     if (reduced) {
       navigation.navigate('Ride');
       return;
@@ -110,6 +126,52 @@ export function HomeScreen() {
       navigation.navigate('Ride');
       keyTurn.setValue(0);
     });
+  };
+
+  /** Starts the session from this tap (the foreground service must come from a user action). */
+  const startRide = () => {
+    if (!pairing) return;
+    void rideRuntime.start({ pairId: pairing.pairId, deviceName, allowNoHeadset });
+    showRide();
+  };
+
+  const begin = async () => {
+    haptic.light();
+    if (rideLive) {
+      showRide();
+      return;
+    }
+    let status = permissions;
+    try {
+      status = await permissionService.check();
+      setPermissions(status);
+    } catch {
+      // The controller checks again and reports a precise error.
+    }
+    if (planRidePermissions(status, allowNoHeadset).explain.length > 0) {
+      setPrimer(true);
+      return;
+    }
+    startRide();
+  };
+
+  /** From the primer: ask the system for what can still be asked, then begin if the required ones are granted. */
+  const allowAndBegin = async () => {
+    const plan = planRidePermissions(permissions, allowNoHeadset);
+    let status = permissions;
+    try {
+      status =
+        plan.askable.length > 0
+          ? await permissionService.request(plan.askable)
+          : await permissionService.check();
+      setPermissions(status);
+    } catch {
+      return;
+    }
+    if (canStartRide(status, allowNoHeadset)) {
+      setPrimer(false);
+      startRide();
+    }
   };
 
   const micOk = permissions.microphone === 'granted' && permissions.notifications !== 'denied';
@@ -147,6 +209,18 @@ export function HomeScreen() {
     pairingsStatus === 'error' ? (
       <StatusPill tone="danger" label={strings.home.pairingsError} testID="status-pairings-error" />
     ) : null;
+
+  if (primer && pairing) {
+    return (
+      <PermissionPrimer
+        status={permissions}
+        allowNoHeadset={allowNoHeadset}
+        onAllow={() => void allowAndBegin()}
+        onOpenSettings={() => void permissionService.openSettings()}
+        onCancel={() => setPrimer(false)}
+      />
+    );
+  }
 
   if (!pairing) {
     const dialSize = Math.min(column * 0.66, 240);
@@ -202,6 +276,27 @@ export function HomeScreen() {
         pair={{ riderInitial: model.riderInitial, pillionInitial: model.pillionInitial, since: model.since }}
         accessibilityLabel={strings.home.dialPairedLabel(deviceName, model.partner, model.since)}
       />
+      <View
+        testID="home-partner"
+        accessible
+        aria-label={`${strings.home.pairedWithLegend} ${pairing.partnerName ?? strings.home.partnerFallback}. ${
+          pairing.role === 'host' ? strings.home.roleHost : strings.home.roleGuest
+        }. ${strings.home.dialSince(model.since)}.`}
+        style={{ alignItems: 'center', gap: 2 }}
+      >
+        <Legend>{strings.home.pairedWithLegend}</Legend>
+        <AppText variant="partnerScriptRow" color={colors.brassLight} testID="home-partner-name">
+          {pairing.partnerName ?? strings.home.partnerFallback}
+        </AppText>
+        <AppText variant="caption" color={colors.textSubtle} align="center" testID="home-partner-detail">
+          {`${pairing.role === 'host' ? strings.home.roleHost : strings.home.roleGuest} · ${strings.home.dialSince(model.since)}`}
+        </AppText>
+        {pairing.partnerName === null ? (
+          <AppText variant="caption" color={colors.textSubtle} align="center">
+            {strings.home.partnerNameLater}
+          </AppText>
+        ) : null}
+      </View>
       <View style={{ gap: spacing.xs }}>
         <AppText variant="title">{named ? strings.home.ready(deviceName) : strings.home.readyPlain}</AppText>
         <AppText variant="body" color={colors.textMuted}>
@@ -215,8 +310,14 @@ export function HomeScreen() {
             <TellTale
               legend={strings.home.tellEarbuds}
               icon="headset"
-              tone={audio.headsetConnected ? 'success' : 'warning'}
-              value={audio.headsetConnected ? strings.home.earbudsReady : strings.home.earbudsMissing}
+              tone={audio === null ? 'neutral' : audio.headsetConnected ? 'success' : 'warning'}
+              value={
+                audio === null
+                  ? strings.home.earbudsChecking
+                  : audio.headsetConnected
+                    ? strings.home.earbudsReady
+                    : strings.home.earbudsMissing
+              }
             />
           </View>
           <View style={{ width: 1, backgroundColor: colors.hairline }} />
@@ -242,13 +343,22 @@ export function HomeScreen() {
         <Rule />
       </View>
       {errorPill}
+      {startProblem !== null && !rideLive ? (
+        <View testID="home-start-problem">
+          <Banner tone="danger">{strings.ride.startProblems[startProblem]}</Banner>
+        </View>
+      ) : null}
       <Plate
         testID="btn-start"
-        label={strings.home.begin}
-        sub={strings.home.beginSub(model.partner)}
+        label={rideLive ? strings.home.resume : strings.home.begin}
+        sub={
+          rideLive
+            ? strings.home.resumeSub(strings.ride.states[snapshot.state])
+            : strings.home.beginSub(model.partner)
+        }
         leading={<KeyKnob turn={keyTurn} />}
         chevron
-        onPress={begin}
+        onPress={() => void begin()}
       />
       {rows(true)}
       <VersionLabel onOpenDebug={() => navigation.navigate('Debug')} />

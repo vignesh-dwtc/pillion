@@ -1,7 +1,5 @@
 import { encode } from 'uqr';
 
-import IDENTITY from '../../../config/identity.json';
-
 /**
  * QR model for the pairing screen: pure TypeScript on top of `uqr`, so Jest can test the geometry and the screen
  * only has to draw one SVG path. Dark modules are merged into horizontal runs (one `M..h..v1h..z` per run).
@@ -47,10 +45,3 @@ export function buildQrModel(data: string, quietZone: number = QR_QUIET_ZONE): Q
     path: matrixToPath(result.data, quietZone),
   };
 }
-
-/**
- * Fixed sample shown on the host pairing screen to prove the renderer. About as long as a real pairing string
- * (pair id, secret, names, Wi-Fi credentials), so the module density on screen is realistic. Obviously not a
- * pairing: it carries no secret and a scanner's decoder rejects it.
- */
-export const SAMPLE_PAIRING_STRING = `${IDENTITY.pairingPrefix}:sample:${'NOT-A-REAL-PAIRING-CODE-'.repeat(8)}`;

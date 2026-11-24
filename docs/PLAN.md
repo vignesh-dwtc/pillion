@@ -20,14 +20,14 @@ The brief (`docs/BRIEF.md`) defines the milestones; this file tracks status. Upd
 - [x] CI workflow `.github/workflows/ci.yml` written (checks, web-e2e, android); YAML-parsed and reviewed by hand, NOT yet run on GitHub (actionlint could not be run here). `scripts/cloud-setup.sh` tested against a fresh temp SDK: clean install 24 s, idempotent re-run <1 s, exit 0 (DECISIONS D-029..D-032).
 - [x] Full `assembleDebug` (arm64) verified in the session: BUILD SUCCESSFUL in 2m 13s, 112 MB debug APK (DECISIONS E-3).
 
-### M1 First voice on the same Wi-Fi - STATUS: not started
+### M1 First voice on the same Wi-Fi - STATUS: in progress, code complete, integrated and CI green, pending screenshots viewed, reviewer pass and the owner's device test; nothing run on a device (started 2026-11-17, branch `claude/m1-lan-voice`)
 
-- [ ] QR pairing (host shows, guest scans) + dev-only paste string.
-- [ ] `LanTransport`, signaling, `WebRtcMediaEngine`, `AudioRoute`, minimal `RideService`.
-- [ ] Home and ride screens (start, mute, end, status); audio cues for connected/disconnected.
-- [ ] Diagnostics screen, export, loopback self-test, runtime audio tunables screen.
-- [ ] Verified here: two-peer browser test passes; pair, home, ride, diagnostics screens viewed in screenshots.
-- [ ] (hw) Owner: two phones on one Wi-Fi router or a third phone's hotspot, Bluetooth earbuds each, 10-minute two-way conversation with screens off. A hotspot hosted by one of the two phones is NOT expected to work yet (risk 1). See `docs/TESTING.md`.
+- [x] QR pairing (host shows, guest scans) + dev-only paste string. Web e2e (`e2e/pairing.spec.ts`) and unit tests; untested on device (`docs/TESTING.md` M1 slice 1). Open minors in `docs/HANDOFF.md` section 3.
+- [~] `LanTransport` (NSD + TCP, `modules/intercom-native` + `src/platform/link`), `AudioRoute` (communication mode, `setCommunicationDevice` on 31+, legacy SCO on 29-30) and minimal `RideService` (foreground service microphone|connectedDevice, wake + Wi-Fi locks, Mute/End actions): written; android:compile, 99 Kotlin JVM tests and the TS wrapper tests pass, arm64 debug APK assembles (android-native report). `WebRtcMediaEngine` and signaling wiring: integrated and committed, full suite passes and CI is green; reviewer pass pending. Compiles and unit-tested, untested on device.
+- [~] Home and ride screens live (start, mute, hold-to-end, status) with cues for connected / reconnecting / disconnected through the native `AudioRoute`; composition root wires `createSessionController` (`src/app/ride.ts`). Integrated and committed, CI green; pending screenshots viewed and reviewer pass.
+- [~] Diagnostics screen live + Share, loopback self-test card and audio tunables on the Developer tools screen. Integrated and committed, CI green; pending screenshots viewed and reviewer pass.
+- [ ] Verified here: two-peer browser test through the real UI (`e2e/ride.spec.ts`) passes (done: CI web-e2e job green); pair, home, ride and diagnostics screenshots viewed (open). (Lead, after integration.)
+- [ ] (hw) Owner: `docs/TESTING.md` M1 items 1-14: two phones on one Wi-Fi router or a third phone's hotspot, Bluetooth earbuds each, 10-minute two-way conversation with screens off, plus permissions, headset off/on, Wi-Fi range drop and return, mute, notification actions, export without secrets, loopback, battery. A hotspot hosted by one of the two phones is NOT expected to work yet (risk 1).
 
 ### M2 No router needed - STATUS: not started
 
@@ -64,3 +64,4 @@ iOS (same TypeScript core; offline link over a shared hotspot first); release wo
 ## Session log
 
 - 2026-11-16: pre-flight (SDK, hosts, versions), scaffold, contracts, docs, subagent definitions. Push access to the repo was refused at session start (Claude GitHub App not installed on the repo); work is committed locally on `claude/m0-foundation`.
+- 2026-11-17 to 2026-11-24: M1 on `claude/m1-lan-voice`: real QR pairing; native LAN link, audio route and ride service (Kotlin + TS wrappers, JVM and Jest tests); live ride, diagnostics, loopback and tunables screens; M1 device checklist in `docs/TESTING.md`.

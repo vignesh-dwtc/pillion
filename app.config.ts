@@ -30,6 +30,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       monochromeImage: './assets/android-icon-monochrome.png',
     },
     predictiveBackGestureEnabled: false,
+    // The intercom's microphone, declared here on purpose. Until M1 it only reached the manifest as a side effect of
+    // expo-camera's default `recordAudioAndroid: true`, which the camera plugin below now turns off.
+    permissions: ['android.permission.RECORD_AUDIO'],
     // Least privilege (docs/DECISIONS.md D-045). Removed from the merged manifest of every variant: storage access
     // (expo-file-system/expo-camera defaults; nothing reads or writes shared storage, and no audio is ever stored) and
     // the RN dev-menu overlay. The debug-only android/app/src/debug manifest may still add SYSTEM_ALERT_WINDOW.
@@ -55,6 +58,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     'expo-secure-store',
+    [
+      // Camera for scanning the pairing QR only. RECORD_AUDIO is not requested through this plugin
+      // (recordAudioAndroid: false): the camera never records video; the intercom's own microphone permission is
+      // declared separately. CAMERA must stay out of blockedPermissions above.
+      'expo-camera',
+      {
+        cameraPermission: `${IDENTITY.displayName} uses the camera only to scan your partner's pairing code.`,
+        recordAudioAndroid: false,
+        barcodeScannerEnabled: true,
+      },
+    ],
     // Debug variant embeds the JS bundle so the CI APK runs without Metro (docs/DECISIONS.md D-009).
     './plugins/withEmbeddedBundle',
   ],

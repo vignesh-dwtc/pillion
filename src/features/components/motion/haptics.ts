@@ -8,6 +8,14 @@ export const haptic = {
   medium(): void {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
   },
+  /** Pairing saved: the system "success" pattern. */
+  success(): void {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+  },
+  /** A rejected scan: the system "warning" pattern. */
+  warning(): void {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => undefined);
+  },
   tick(): void {
     Haptics.selectionAsync().catch(() => undefined);
   },

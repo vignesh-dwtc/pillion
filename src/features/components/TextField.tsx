@@ -21,6 +21,7 @@ export function TextField({
   onBlur,
   onSubmitEditing,
   autoCapitalize = 'none',
+  secure = false,
 }: {
   label: string;
   hint?: string;
@@ -33,6 +34,8 @@ export function TextField({
   onBlur?: () => void;
   onSubmitEditing?: () => void;
   autoCapitalize?: 'none' | 'words' | 'sentences';
+  /** Masks the value (pasted pairing strings): never drawn as readable text, kept out of the keyboard's memory. */
+  secure?: boolean;
 }) {
   const [focused, setFocused] = useState(false);
   return (
@@ -51,7 +54,8 @@ export function TextField({
         placeholder={placeholder}
         placeholderTextColor={colors.textSubtle}
         maxLength={maxLength}
-        multiline={multiline}
+        multiline={multiline && !secure}
+        secureTextEntry={secure}
         onFocus={() => setFocused(true)}
         onBlur={() => {
           setFocused(false);

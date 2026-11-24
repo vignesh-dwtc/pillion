@@ -1,5 +1,5 @@
 import type { DiagnosticsReportInput } from '../../core/diagnostics/types';
-import { SAMPLE_DIAGNOSTICS, SAMPLE_NOW } from '../../app/placeholders';
+import { SAMPLE_DIAGNOSTICS, SAMPLE_NOW } from './__fixtures__/sampleDiagnostics';
 
 import { buildDiagnosticsSections, sectionsToText, TRANSPORT_LABEL } from './buildSections';
 
@@ -75,16 +75,16 @@ describe('buildDiagnosticsSections', () => {
   });
 
   it('keeps only the latest log entries, newest last', () => {
-    const many = Array.from({ length: 20 }, (_, i) => ({
+    const many = Array.from({ length: 30 }, (_, i) => ({
       t: SAMPLE_NOW + i,
       level: 'info' as const,
       tag: 'x',
       message: `m${i}`,
     }));
     const log = buildDiagnosticsSections({ ...SAMPLE_DIAGNOSTICS, log: many }).find((s) => s.id === 'log');
-    expect(log?.rows).toHaveLength(8);
-    expect(log?.rows.at(-1)?.value).toContain('m19');
-    expect(log?.rows[0]?.value).toContain('m12');
+    expect(log?.rows).toHaveLength(20);
+    expect(log?.rows.at(-1)?.value).toContain('m29');
+    expect(log?.rows[0]?.value).toContain('m10');
   });
 
   it('labels every transport kind', () => {
