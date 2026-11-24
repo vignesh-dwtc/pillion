@@ -2,28 +2,30 @@ import { useMemo, useState } from 'react';
 import { Share, View, useWindowDimensions } from 'react-native';
 
 import IDENTITY from '../../../config/identity.json';
+import { formatDiagnosticsReport } from '../../core/diagnostics';
 import { useDiagnosticsInput } from '../../app/hooks';
 import { useBack } from '../../app/navigationHooks';
 import { SCREEN_TEST_IDS } from '../../app/routes';
 import { strings } from '../../app/strings';
-import { colors, gutter, spacing } from '../../app/theme';
+import { colors, gutter, spacing, type Tone } from '../../app/theme';
 import { AppText, Legend } from '../components/AppText';
-import { Banner, SectionHeading, StatusPill } from '../components/Card';
+import { SectionHeading, StatusPill } from '../components/Card';
 import { SubDial } from '../components/Dial/SubDial';
 import { LevelBar } from '../components/LevelBar';
 import { Plate } from '../components/Plate';
 import { Rule } from '../components/Rule';
 import { Screen } from '../components/Screen';
 
-import { buildDiagnosticsSections, sectionsToText, type DiagRow } from './buildSections';
+import { buildDiagnosticsSections, type DiagRow } from './buildSections';
 
 type ShareOutcome = 'shared' | 'unavailable' | null;
 
 /**
  * Diagnostics: every section the brief lists (session, transport, interfaces, ICE candidates, link quality,
- * levels, audio route, battery, log) plus Share. M0 shows sample data (see the banner); M1 feeds live values
- * through `useDiagnosticsInput`. Share hands the text to the system share sheet, and falls back to showing the
- * text when no share target exists (web, or a phone without one).
+ * levels, audio route, battery, log) plus Share, all live from `useDiagnosticsInput` (session snapshot, one-second
+ * media sample, audio route, interfaces, battery, ring log). Share hands core's `formatDiagnosticsReport` text to the
+ * system share sheet (it never contains the pairing secret or the passphrase), and falls back to showing the text when
+ * no share target exists (web, or a phone without one).
  */
 export function DiagnosticsScreen() {
   const back = useBack();
@@ -36,27 +38,44 @@ export function DiagnosticsScreen() {
   const sample = input.sample;
   const level = sample?.inputLevel ?? null;
   const loss = sample?.lossPct ?? null;
-  const linked = input.session?.state === 'connected';
-  const checks = [
+  const state = input.session?.state ?? 'idle';
+  const rideLive = state !== 'idle' && state !== 'ended';
+  const headset = input.audio?.headsetConnected ?? null;
+  // Three states, never colour alone: OK, Check, or no verdict (no ride / no data yet) shown neutral without a prefix.
+  const checks: { label: string; tone: Tone; value: string; testID: string }[] = [
     {
       label: strings.diagnostics.checkLink,
-      ok: linked,
-      value: linked ? strings.ride.linkUp : strings.ride.linkSearching,
+      tone: state === 'connected' ? 'success' : rideLive ? 'warning' : 'neutral',
+      value: strings.ride.states[state],
+      testID: 'check-link',
     },
     {
       label: strings.diagnostics.checkLoss,
-      ok: (loss ?? 0) < 5,
+      tone: loss === null ? 'neutral' : loss < 5 ? 'success' : 'warning',
       value: loss === null ? strings.common.notAvailable : `${loss.toFixed(1)} %`,
+      testID: 'check-loss',
     },
     {
       label: strings.diagnostics.checkHeadset,
-      ok: input.audio?.headsetConnected ?? false,
-      value: input.audio?.headsetConnected ? strings.ride.earbudsOn : strings.ride.earbudsOff,
+      tone: headset === null ? 'neutral' : headset ? 'success' : 'warning',
+      value:
+        headset === null
+          ? strings.home.earbudsChecking
+          : headset
+            ? strings.ride.earbudsOn
+            : strings.ride.earbudsOff,
+      testID: 'check-headset',
     },
   ];
+  const verdict = (tone: Tone): string | null =>
+    tone === 'success'
+      ? strings.diagnostics.checkOk
+      : tone === 'neutral'
+        ? null
+        : strings.diagnostics.checkWarn;
 
   const onShare = async () => {
-    const text = sectionsToText(`${IDENTITY.displayName} diagnostics`, input.generatedAt, sections);
+    const text = formatDiagnosticsReport({ ...input, generatedAt: Date.now() });
     try {
       await Share.share({ title: `${IDENTITY.displayName} diagnostics`, message: text });
       setOutcome('shared');
@@ -83,8 +102,6 @@ export function DiagnosticsScreen() {
         />
       }
     >
-      <Banner testID="banner-sample-data">{strings.placeholder.diagnostics}</Banner>
-
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }} testID="diag-dials">
         {[
           {
@@ -144,8 +161,9 @@ export function DiagnosticsScreen() {
                 </AppText>
                 <View>
                   <StatusPill
-                    tone={check.ok ? 'success' : 'warning'}
-                    label={`${check.ok ? strings.diagnostics.checkOk : strings.diagnostics.checkWarn} · ${check.value}`}
+                    testID={check.testID}
+                    tone={check.tone}
+                    label={verdict(check.tone) ? `${verdict(check.tone)} · ${check.value}` : check.value}
                   />
                 </View>
               </View>

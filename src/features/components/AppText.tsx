@@ -1,6 +1,6 @@
 import { Platform, StyleSheet, Text, type StyleProp, type TextProps, type TextStyle } from 'react-native';
 
-import { webFontScale } from '../../app/preview';
+import { webFontScale } from '../../app/webFontScale';
 
 import { colors, maxFontScale, type as typeScale, type TypeVariant } from '../../app/theme';
 
