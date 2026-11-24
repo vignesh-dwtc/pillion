@@ -13,9 +13,8 @@ import { strings } from '../../app/strings';
 
 /**
  * View-model for the diagnostics screen. One pure function turns the report input (the same shape the share export
- * uses) into titled sections of label/value rows; the screen draws the rows and `sectionsToText` writes the very
- * same rows as plain text, so what you see is what you share. In M1 the share action switches to core's
- * `formatDiagnosticsReport`; the sections stay the on-screen view.
+ * uses) into titled sections of label/value rows for the screen. The share action exports core's
+ * `formatDiagnosticsReport` of the same input; `sectionsToText` remains for tests and debugging.
  */
 
 export interface DiagRow {
@@ -47,7 +46,7 @@ export interface DiagSection {
 }
 
 const NA = strings.common.notAvailable;
-const LOG_TAIL = 8;
+const LOG_TAIL = 20;
 
 const yesNo = (value: boolean): string => (value ? strings.common.yes : strings.common.no);
 

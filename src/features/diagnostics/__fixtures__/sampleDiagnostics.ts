@@ -1,17 +1,16 @@
-import type { DiagnosticsReportInput, LogEntry } from '../core/diagnostics/types';
-import type { SessionSnapshot } from '../core/session/types';
-import { DEFAULT_AUDIO_TUNABLES } from '../platform/audio/AudioTunables';
-import type { AudioRouteState } from '../platform/audio/AudioRoute';
-import type { LinkNetworkInterface } from '../platform/link/LinkTransport';
-import type { IceCandidateInfo, MediaStats } from '../platform/media/MediaEngine';
-import type { BatteryInfo } from '../platform/service/RideService';
+import type { DiagnosticsReportInput, LogEntry } from '../../../core/diagnostics/types';
+import type { SessionSnapshot } from '../../../core/session/types';
+import { DEFAULT_AUDIO_TUNABLES } from '../../../platform/audio/AudioTunables';
+import type { AudioRouteState } from '../../../platform/audio/AudioRoute';
+import type { LinkNetworkInterface } from '../../../platform/link/LinkTransport';
+import type { IceCandidateInfo, MediaStats } from '../../../platform/media/MediaEngine';
+import type { BatteryInfo } from '../../../platform/service/RideService';
 
-import { APP_VERSION } from './version';
+const APP_VERSION = '0.0.0-test';
 
 /**
- * STATIC PLACEHOLDER DATA for the M0 screens. Nothing here is live: the composition root (M1) replaces these
- * with the session controller, the stats sampler and the ring log. Typed with the frozen contracts so the
- * swap is a change of source, not of shape. No secrets: the contract types cannot even carry them.
+ * TEST FIXTURE for the diagnostics view-model tests (buildSections.test.ts). Not imported by the app: the screens
+ * read live data. Typed with the frozen contracts; no secrets (the contract types cannot carry them).
  */
 
 /** Fixed clock so the sample renders identically every time (screenshots, tests). */

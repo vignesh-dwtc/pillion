@@ -35,4 +35,12 @@ object NsdServiceNames {
   fun normalizeServiceType(type: String): String = type.trim().trimEnd('.').lowercase()
 
   fun sameServiceType(a: String, b: String): Boolean = normalizeServiceType(a) == normalizeServiceType(b)
+
+  /**
+   * DNS-SD service type as NsdManager takes it: `_<name>._tcp` or `_<name>._udp`, name 1-15 characters of letters, digits
+   * and hyphens (RFC 6335 section 5.1), no trailing dot.
+   */
+  fun isValidServiceType(type: String): Boolean = SERVICE_TYPE.matches(type)
+
+  private val SERVICE_TYPE = Regex("_[A-Za-z0-9](?:[A-Za-z0-9-]{0,13}[A-Za-z0-9])?\\._(tcp|udp)")
 }

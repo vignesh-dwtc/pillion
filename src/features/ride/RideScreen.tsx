@@ -1,8 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Animated, View, useWindowDimensions } from 'react-native';
 import { useAnimatedValue } from '../components/motion/useAnimatedValue';
 
-import { useAudioRoute, useDiagnosticsInput, useRideClock, useSessionSnapshot } from '../../app/hooks';
+import { rideRuntime } from '../../app/composition';
+import {
+  useAppStore,
+  useAudioRoute,
+  useRideClock,
+  useRideLinkKind,
+  useRideSample,
+  useRideStartedAt,
+  useRideStartProblem,
+  useSessionSnapshot,
+} from '../../app/hooks';
 import { useAppNavigation, useGoHome } from '../../app/navigationHooks';
 import { SCREEN_TEST_IDS } from '../../app/routes';
 import { strings } from '../../app/strings';
@@ -17,10 +27,11 @@ import { useReducedMotion } from '../components/motion/useReducedMotion';
 import { Plate } from '../components/Plate';
 import { RingButton } from '../components/RingButton';
 import { Screen } from '../components/Screen';
-import { Icon } from '../components/Icon';
+import { Banner } from '../components/Card';
 import { TellTale } from '../components/TellTale';
+import { primaryPairing } from '../home/dialModel';
 
-import { describeSession, linkQuality, qualityWord, rideCaption } from './sessionStatus';
+import { describeSession, linkQuality, linkTellTale, qualityWord, rideCaption } from './sessionStatus';
 
 /** Tell-tale cell height: the spec's 60 dp plus room for a two-line value. */
 const CELL_HEIGHT = 64;
@@ -76,46 +87,62 @@ function Lamp({ color, breathe }: { color: string; breathe: boolean }) {
 
 /**
  * Ride: the gauge (link quality, ride time, delay, partner battery), the tell-tales and two glove-sized plates (Mute,
- * hold-to-End). All state comes from the session snapshot; the UI never makes its own transitions. M0 reads a sample
- * session (debug screen: ride preview) and keeps Mute in local state; M1 swaps in the SessionController.
+ * hold-to-End). Everything comes from the live session snapshot; Mute and End go to the SessionController through the
+ * ride runtime, and the UI never makes a transition of its own. The notification's Mute and End buttons reach the
+ * same controller, so this screen simply follows the snapshot. Once the ride has ended the plates give way to one
+ * Back home plate and, when the ride stopped on its own, the reason.
  */
 export function RideScreen() {
   const snapshot = useSessionSnapshot();
   const audio = useAudioRoute();
-  const diagnostics = useDiagnosticsInput();
+  const sample = useRideSample();
+  const linkKind = useRideLinkKind();
+  const startProblem = useRideStartProblem();
+  const rideStartedAt = useRideStartedAt();
+  const pairings = useAppStore((s) => s.pairings);
   const navigation = useAppNavigation();
   const goHome = useGoHome();
   const { width } = useWindowDimensions();
   const reduced = useReducedMotion();
   const active = useAppActive();
-  // PLACEHOLDER: in M1 this is snapshot.muted, changed through SessionController.setMuted.
-  const [muted, setMuted] = useState(snapshot.muted);
   const muteFade = useAnimatedValue(1);
 
+  const muted = snapshot.muted;
+  const live = snapshot.state !== 'idle' && snapshot.state !== 'ended';
   const status = describeSession(snapshot.state);
   const linked = snapshot.state === 'connected';
-  const now = useRideClock(active && snapshot.connectedAt !== null);
+  const now = useRideClock(active && live && rideStartedAt !== null);
   const headset = snapshot.local.headsetConnected;
-  const partner = snapshot.peer;
-  const partnerName = partner?.name ?? strings.home.partnerFallback;
-  const sample = diagnostics.sample ?? null;
+  // After the ride the partner's last state is history: the cells show a dash instead of stale values.
+  const partner = live ? snapshot.peer : null;
+  const stored = primaryPairing(pairings);
+  const knownName = snapshot.peer?.name ?? stored?.partnerName ?? null;
+  const partnerName = knownName ?? strings.home.partnerFallback;
   const quality = linkQuality(snapshot.state, sample);
   const rtt = linked ? (sample?.rttMs ?? null) : null;
   const delay = rtt === null ? null : String(Math.round(rtt));
-  const rideMs = snapshot.connectedAt === null ? 0 : now - snapshot.connectedAt;
-  const activeDevice = audio.devices.find((d) => d.id === audio.activeDeviceId)?.name ?? null;
+  // Ride time runs from the first connection and keeps going through reconnects (frozen once the ride ended).
+  const rideMs = rideStartedAt === null ? 0 : Math.max(0, now - rideStartedAt);
+  const activeDevice = audio?.devices.find((d) => d.id === audio.activeDeviceId)?.name ?? null;
   const gaugeSize = Math.min(Math.min(width, 560) - 2 * gutter, 340);
   const tone = toneColor[status.tone];
+  const link = linkTellTale(snapshot.state, snapshot.attempt);
+  const error = snapshot.error;
 
   const toggleMute = () => {
     haptic.light();
-    setMuted((value) => !value);
+    rideRuntime.setMuted(!muted);
     muteFade.setValue(reduced ? 0.6 : 0.35);
     Animated.timing(muteFade, {
       toValue: 1,
       duration: reduced ? duration.reducedCrossfade : duration.mute,
       useNativeDriver: true,
     }).start();
+  };
+
+  const endRide = () => {
+    void rideRuntime.end();
+    goHome();
   };
 
   const summary = strings.ride.gaugeSummary(
@@ -126,6 +153,17 @@ export function RideScreen() {
       ? strings.common.notAvailable
       : `${partner.batteryPct} percent`,
   );
+
+  /** Why the ride is not running (or is retrying): the controller's own words, or the runtime's start refusal. */
+  // While live the caption and the Link tell-tale already say what is happening; details are on Diagnostics.
+  const notice: { text: string; tone: 'danger' | 'info' } | null =
+    startProblem !== null && !live
+      ? { text: strings.ride.startProblems[startProblem], tone: 'danger' }
+      : error && snapshot.state === 'ended'
+        ? { text: error.message, tone: error.code === 'partner-ended' ? 'info' : 'danger' }
+        : snapshot.state === 'idle'
+          ? { text: strings.ride.notStarted, tone: 'info' }
+          : null;
 
   const header = (
     <View style={{ paddingTop: spacing.sm, paddingBottom: spacing.sm, gap: spacing.sm }}>
@@ -147,7 +185,7 @@ export function RideScreen() {
             <Legend color={colors.textSubtle} style={{ fontSize: 11, letterSpacing: 2.2 }}>
               {strings.ride.onTheRoad}
             </Legend>
-            <AppText variant="bodyLarge" color={tone} testID="text-session-state">
+            <AppText variant="bodyLarge" color={tone} testID="ride-state">
               {status.label}
             </AppText>
           </View>
@@ -159,22 +197,15 @@ export function RideScreen() {
           onPress={() => navigation.navigate('Diagnostics')}
         />
       </View>
-      {/* PLACEHOLDER (M0): a one-line note in the header, so the bottom plates never slice it. */}
-      <View
-        testID="banner-placeholder"
-        role="note"
-        aria-label={strings.placeholder.ride}
-        style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}
-      >
-        <Icon name="info" size={16} color={colors.amber} />
-        <AppText variant="caption" color={colors.textSubtle} style={{ flexShrink: 1 }}>
-          {strings.placeholder.rideShort}
-        </AppText>
-      </View>
+      {notice ? (
+        <View testID="ride-notice" aria-live="polite">
+          <Banner tone={notice.tone}>{notice.text}</Banner>
+        </View>
+      ) : null}
     </View>
   );
 
-  const footer = (
+  const footer = live ? (
     <View style={{ flexDirection: 'row', gap: spacing.md }}>
       <Animated.View style={{ flex: 1, opacity: muteFade }}>
         <Plate
@@ -201,10 +232,18 @@ export function RideScreen() {
           label={strings.ride.end}
           sub={strings.ride.endSub}
           accessibilityLabel={strings.ride.endLabel}
-          onComplete={goHome}
+          onComplete={endRide}
         />
       </View>
     </View>
+  ) : (
+    <Plate
+      testID="btn-back-home"
+      label={strings.ride.backHome}
+      sub={strings.ride.backHomeSub}
+      icon="back"
+      onPress={goHome}
+    />
   );
 
   return (
@@ -221,13 +260,16 @@ export function RideScreen() {
           accessibilityLabel={summary}
         />
         <View style={{ alignItems: 'center', gap: 2 }}>
-          {partner ? (
-            <AppText variant="partnerScript" color={colors.brassLight} align="center">
-              {strings.ride.withPartner(partner.name)}
-            </AppText>
-          ) : null}
-          <AppText variant="caption" color={colors.textSubtle} align="center">
-            {rideCaption(snapshot.state, quality, partnerName)}
+          <AppText
+            variant="partnerScript"
+            color={colors.brassLight}
+            align="center"
+            testID="ride-partner-name"
+          >
+            {strings.ride.withPartner(partnerName)}
+          </AppText>
+          <AppText variant="caption" color={colors.textSubtle} align="center" testID="ride-caption">
+            {rideCaption(snapshot.state, quality, partnerName, snapshot.transport ?? linkKind)}
           </AppText>
         </View>
       </View>
@@ -247,27 +289,30 @@ export function RideScreen() {
               minHeight={CELL_HEIGHT}
             />,
             <TellTale
-              key="partner-mic"
-              testID="status-partner-mic"
-              legend={strings.ride.tellPartnerMic(partnerName)}
-              icon={partner?.muted ? 'mic-off' : 'mic'}
-              tone={partner?.muted ? 'warning' : 'success'}
-              value={partner?.muted ? strings.ride.micMuted : strings.ride.micLive}
+              key="link"
+              testID="status-link"
+              legend={strings.ride.tellLink}
+              icon="wifi-direct"
+              tone={link.tone}
+              value={link.value}
               lightDelay={60}
               align="start"
               minHeight={CELL_HEIGHT}
             />,
             <TellTale
-              key="link"
-              legend={strings.ride.tellLink}
-              icon="wifi-direct"
-              tone={linked ? 'success' : snapshot.state === 'reconnecting' ? 'warning' : 'neutral'}
+              key="partner"
+              testID="status-partner"
+              legend={knownName ?? strings.ride.tellPartner}
+              icon={partner?.muted ? 'mic-off' : 'mic'}
+              tone={
+                partner ? (partner.muted || !partner.headsetConnected ? 'warning' : 'success') : 'neutral'
+              }
               value={
-                linked
-                  ? strings.ride.linkUp
-                  : snapshot.state === 'reconnecting'
-                    ? strings.ride.linkRetrying
-                    : strings.ride.linkSearching
+                partner
+                  ? strings.ride.partnerSummary(partner.muted, partner.headsetConnected)
+                  : live
+                    ? strings.ride.partnerUnknown
+                    : strings.ride.partnerOffline
               }
               lightDelay={120}
               align="start"
@@ -275,9 +320,16 @@ export function RideScreen() {
             />,
             <TellTale
               key="battery"
+              testID="status-battery"
               legend={strings.ride.tellBattery}
               icon="battery"
-              tone={(snapshot.local.batteryPct ?? 100) <= 20 ? 'warning' : 'success'}
+              tone={
+                snapshot.local.batteryPct === null
+                  ? 'neutral'
+                  : snapshot.local.batteryPct <= 20
+                    ? 'warning'
+                    : 'success'
+              }
               value={
                 snapshot.local.batteryPct === null
                   ? strings.common.notAvailable

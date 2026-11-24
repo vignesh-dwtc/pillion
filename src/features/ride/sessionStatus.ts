@@ -1,4 +1,5 @@
 import type { SessionState } from '../../core/session/types';
+import type { LinkKind } from '../../platform/link/LinkTransport';
 import type { IconName } from '../components/Icon';
 import { strings } from '../../app/strings';
 import type { Tone } from '../../app/theme';
@@ -65,19 +66,37 @@ export function qualityWord(state: SessionState, quality: number): string {
  * The caption under "with <partner>" on the ride screen. It reports what is true now: never "Voice clear" while the
  * link is still coming up or has dropped.
  */
-export function rideCaption(state: SessionState, quality: number, partner: string): string {
+export function rideCaption(
+  state: SessionState,
+  quality: number,
+  partner: string,
+  via: LinkKind | null,
+): string {
   const c = strings.ride.captions;
+  const how = strings.ride.via[via ?? 'lan'];
+  if (state === 'ended') return c.ended;
   const view = describeSession(state);
   switch (view.gauge) {
     case 'linked': {
       const v = strings.ride.voice;
-      return c.linked(quality >= 0.75 ? v.strong : quality >= 0.45 ? v.fair : v.weak);
+      return c.linked(quality >= 0.75 ? v.strong : quality >= 0.45 ? v.fair : v.weak, how);
     }
     case 'connecting':
-      return c.connecting(partner);
+      return c.connecting(partner, how);
     case 'reconnecting':
       return c.reconnecting;
     case 'idle':
       return c.idle;
   }
+}
+
+/** The Link tell-tale: up, searching, or retrying with the attempt number of the current outage. */
+export function linkTellTale(state: SessionState, attempt: number): { tone: Tone; value: string } {
+  const r = strings.ride;
+  if (state === 'connected') return { tone: 'success', value: r.linkUp };
+  if (state === 'reconnecting') {
+    return { tone: 'warning', value: attempt > 0 ? r.linkAttempt(attempt) : r.linkRetrying };
+  }
+  if (state === 'idle' || state === 'ended') return { tone: 'neutral', value: r.states[state] };
+  return { tone: 'info', value: r.linkSearching };
 }
