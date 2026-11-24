@@ -57,7 +57,7 @@ export interface RideServiceModuleInfo {
 
 export type IntercomRideServiceEvents = {
   onAction(event: { action: NativeRideAction }): void;
-  /** Ride clock: fires when a timer scheduled with scheduleTimer elapses (see D-053). */
+  /** Ride clock: fires when a timer scheduled with scheduleTimer elapses (see D-064). */
   onTimer(event: { id: number }): void;
 };
 
@@ -72,7 +72,7 @@ export declare class IntercomRideServiceNativeModule extends NativeModule<Interc
   /** null when the platform reports no battery information. */
   getBattery(): Promise<NativeBatteryInfo | null>;
   /**
-   * Ride clock (D-053). React Native 0.88 pauses JS setTimeout/setInterval while the app is backgrounded, which
+   * Ride clock (D-064). React Native 0.88 pauses JS setTimeout/setInterval while the app is backgrounded, which
    * would stop heartbeats and reconnects with the screen off. These timers run natively and are delivered via
    * onTimer. Returns false if the timer could not be scheduled.
    */
